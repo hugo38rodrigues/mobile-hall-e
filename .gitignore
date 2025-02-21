@@ -49,3 +49,6 @@ linux/Flutter/ephemeral/
 *.log
 *.tmp
 *.swp
+
+# ENV
+.env
