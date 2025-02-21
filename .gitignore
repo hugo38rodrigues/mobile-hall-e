@@ -35,6 +35,7 @@ linux/Flutter/ephemeral/
 
 # VS Code specific
 .vscode/
+.DS_Store
 
 # IntelliJ specific
 .idea/
@@ -49,6 +50,9 @@ linux/Flutter/ephemeral/
 *.log
 *.tmp
 *.swp
+devtools_options.yaml
+.metadata
+*.iml
 
 # ENV
 .env
