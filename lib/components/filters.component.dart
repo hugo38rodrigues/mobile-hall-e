@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../styles/fontColors.dart';
+import '../styles/font-colors.dart';
 
 class FilterPage extends StatefulWidget {
   final Function(Map<String, List<String>>) getSelectedFilters;

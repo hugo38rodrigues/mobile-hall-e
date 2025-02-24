@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:hall_e_mobile/styles/fontColors.dart';
-
+import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/constants.utils.dart';
 import '../loader.component.dart';
 import 'match-card.component.dart';
 

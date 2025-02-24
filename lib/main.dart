@@ -3,8 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import './styles/fontColors.dart';
-import 'screen/login.screen.dart';
+import 'styles/font-colors.dart';
+import 'screen/home.screen.dart';
 import 'screen/sign-in.screen.dart';
 
 void main() async {
@@ -25,17 +25,7 @@ class MyApp extends ConsumerWidget {
         fontFamily: 'Lexend',
         textTheme: textThemes,
       ),
-      home: AuthCheck(), // Vérifie l'authentification au démarrage,
+      home: HomeScreen(), // Vérifie l'authentification au démarrage,
     );
-  }
-}
-
-class AuthCheck extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Simulation : vérifie si l'utilisateur est connecté
-    bool isLoggedIn = true; // Remplace par ta logique d'authentification
-
-    return isLoggedIn ? LoginScreen() : SignInScreen();
   }
 }
