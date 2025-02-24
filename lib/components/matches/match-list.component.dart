@@ -161,7 +161,7 @@ class _MatchListState extends State<MatchList> {
     });
 
     return isLoading
-        ? CustomLoader()
+        ? CustomLoader(text: loadMatchText,)
         : filteredMatches.isEmpty
             ? Center(
                 child: Text(
