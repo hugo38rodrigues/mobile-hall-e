@@ -27,6 +27,12 @@ class _FilterPageState extends State<FilterPage> {
   bool isLoading = false;
   String searchQuery = "";
 
+  final Map<String, String> categoryTranslations = {
+    'games': 'Jeux',
+    'leagues': 'Compétitions',
+    'teams': 'Équipes'
+  };
+
   @override
   void initState() {
     super.initState();
@@ -170,7 +176,7 @@ class _FilterPageState extends State<FilterPage> {
                           boutonSelectionne = category;
                         });
                       },
-                      child: Text(category.toUpperCase()),
+                      child: Text(categoryTranslations[category]!),
                     ),
                   );
                 }).toList(),
