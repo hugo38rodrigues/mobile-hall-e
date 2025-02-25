@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
+import 'package:hall_e_mobile/models/user.models.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 class Connexion extends StatefulWidget {
   final Function getStateProfile;
@@ -80,17 +82,39 @@ class _ConnexionState extends State<Connexion> {
     Dio dio = Dio();
 
     try {
-      Response profile = await dio.post('$apiUrl/commun/connexion',
-          data: {"email": email, "password": password},
-          options: Options(
-            headers: {"Content-Type": "application/json"},
-          ));
+      Response response = await dio
+          .post('$apiUrl/commun/connexion',
+              data: {"email": email, "password": password},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          _isLoading = false;
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/commun/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+            
+          );
+        },
+      );
 
-      ref.read(accountProvider.notifier).setAccount(profile.data);
-
+      if (response.statusCode == 200) {
+        User user = User.fromMap(response.data);
+        ref.read(accountProvider.notifier).setAccount(user);
+        _isLoading = false;
+      }
     } catch (e) {
-      print('Erreur : $e');
-      _isLoading = true;
+      if (e is DioException) {
+        _isLoading = false;
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+        
+      }
     }
   }
 

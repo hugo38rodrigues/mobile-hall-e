@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../styles/font-colors.dart';
@@ -44,14 +45,33 @@ class _FilterPageState extends State<FilterPage> {
     String? apiUrl = dotenv.env['API_URL'];
     Dio dio = Dio();
     try {
-      Response response = await dio.get('$apiUrl/commun/filters');
-      setState(() {
-        gameNames = response.data['filters']['gameNames'] ?? [];
-        leagueNames = response.data['filters']['leagueNames'] ?? [];
-        teams = response.data['filters']['teamNames'] ?? [];
-      });
-    } catch (error) {
-      print('Erreur: $error');
+      Response response = await dio.get('$apiUrl/commun/filters').timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions:
+                RequestOptions(path: '$apiUrl/commun/filters'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          gameNames = response.data['filters']['gameNames'] ?? [];
+          leagueNames = response.data['filters']['leagueNames'] ?? [];
+          teams = response.data['filters']['teamNames'] ?? [];
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
     }
   }
 
