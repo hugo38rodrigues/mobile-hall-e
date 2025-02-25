@@ -8,6 +8,7 @@ import '../styles/font-colors.dart';
 class FilterPage extends StatefulWidget {
   final Function(Map<String, List<String>>) getSelectedFilters;
   FilterPage({required this.getSelectedFilters});
+
   @override
   _FilterPageState createState() => _FilterPageState();
 }
@@ -20,9 +21,9 @@ class _FilterPageState extends State<FilterPage> {
     'teams': []
   };
 
-  List gameNames = []; // Liste vide, remplie via l'API
-  List leagueNames = []; // Liste vide, remplie via l'API
-  List teams = []; // Liste vide, remplie via l'API
+  List gameNames = [];
+  List leagueNames = [];
+  List teams = [];
   bool isLoading = false;
   String searchQuery = "";
 
@@ -42,13 +43,9 @@ class _FilterPageState extends State<FilterPage> {
         gameNames = response.data['filters']['gameNames'] ?? [];
         leagueNames = response.data['filters']['leagueNames'] ?? [];
         teams = response.data['filters']['teamNames'] ?? [];
-        isLoading = false;
       });
     } catch (error) {
       print('Erreur: $error');
-      setState(() {
-        isLoading = false; // Si erreur, on arrête le chargement
-      });
     }
   }
 
@@ -70,87 +67,46 @@ class _FilterPageState extends State<FilterPage> {
     await prefs.setStringList('teams', arrayFiltersSelected['teams'] ?? []);
   }
 
-  void _filtersManageSelect(String item) {
+  void _filtersManageSelect(String category, String item) {
     setState(() {
-      arrayFiltersSelected.putIfAbsent(boutonSelectionne, () => []);
-      List<String> selection = arrayFiltersSelected[boutonSelectionne]!;
-
-      if (selection.contains(item)) {
-        selection.remove(item);
-      } else {
-        selection.add(item);
-      }
+      List<String> selection = arrayFiltersSelected[category]!;
+      selection.contains(item) ? selection.remove(item) : selection.add(item);
       _filtersSelectionSave();
     });
   }
 
-  bool _isSelectedFilterBtn() {
-    return arrayFiltersSelected.values.any((list) => list.isNotEmpty);
-  }
-
   List<dynamic> _filtersManage() {
-    List<dynamic> selectedItems = [];
+    List<dynamic> allItems = [
+      ...gameNames.map((item) => {'category': 'games', 'item': item}),
+      ...leagueNames.map((item) => {'category': 'leagues', 'item': item}),
+      ...teams.map((item) => {'category': 'teams', 'item': item}),
+    ];
 
-    // Récupérer les éléments en fonction de la catégorie sélectionnée
+    List<dynamic> filteredItems = searchQuery.isNotEmpty
+        ? allItems
+            .where((e) => e['item']
+                .toString()
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase()))
+            .toList()
+        : allItems.where((e) => e['category'] == boutonSelectionne).toList();
 
-    // Appliquer les filtres de recherche
-    if (searchQuery.isNotEmpty) {
-      List<Map<String, dynamic>> allItems = [];
+    List<dynamic> selectedItems = filteredItems
+        .where((e) =>
+            arrayFiltersSelected[e['category']]?.contains(e['item']) ?? false)
+        .toList();
 
-      // Ajouter les éléments des trois catégories (gameNames, leagueNames, teams)
-      allItems
-          .addAll(gameNames.map((item) => {'category': 'games', 'item': item}));
-      allItems.addAll(
-          leagueNames.map((item) => {'category': 'leagues', 'item': item}));
-      allItems.addAll(teams.map((item) => {'category': 'teams', 'item': item}));
+    List<dynamic> unselectedItems = filteredItems
+        .where((e) =>
+            !(arrayFiltersSelected[e['category']]?.contains(e['item']) ??
+                false))
+        .toList();
 
-      // Appliquer les filtres de recherche sur toutes les catégories combinées
-
-      selectedItems = allItems
-          .where((element) => element['item']
-              .toString()
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase()))
-          .map((e) => e['item']) // Récupérer seulement l'élément 'item' du Map
-          .toList();
-    } else {
-      switch (boutonSelectionne) {
-        case 'games':
-          selectedItems = gameNames;
-          break;
-        case 'leagues':
-          selectedItems = leagueNames;
-          break;
-        case 'teams':
-          selectedItems = teams;
-          break;
-        default:
-          selectedItems = [];
-          break;
-      }
-    }
-
-    return selectedItems;
+    return [...selectedItems, ...unselectedItems];
   }
 
   @override
   Widget build(BuildContext context) {
-    List<dynamic> selectedFilters = _filtersManage();
-
-    List<dynamic> selectedItems = selectedFilters
-        .where((item) =>
-            arrayFiltersSelected[boutonSelectionne]?.contains(item) ?? false)
-        .toList()
-      ..sort((a, b) => a.toString().compareTo(b.toString()));
-
-    List<dynamic> unselectedItems = selectedFilters
-        .where((item) =>
-            !(arrayFiltersSelected[boutonSelectionne]?.contains(item) ?? false))
-        .toList()
-      ..sort((a, b) => a.toString().compareTo(b.toString()));
-
-    List<dynamic> orderedFilters = [...selectedItems, ...unselectedItems];
-
     return Column(
       children: [
         Container(
@@ -158,14 +114,11 @@ class _FilterPageState extends State<FilterPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Filtrer vos matchs',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: secondaryColor,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              const Text('Filtrer vos matchs',
+                  style: TextStyle(
+                      fontSize: 20,
+                      color: secondaryColor,
+                      fontWeight: FontWeight.w800)),
               IconButton(
                 icon: const Icon(Icons.close),
                 color: secondaryColor,
@@ -184,16 +137,7 @@ class _FilterPageState extends State<FilterPage> {
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.search, color: secondaryColor),
               hintText: 'Rechercher...',
-              hintStyle: TextStyle(color: secondaryColor),
               border: OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: secondaryColor, width: 2.0),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: secondaryColor, width: 2.0),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
             ),
             onChanged: (value) {
               setState(() {
@@ -203,131 +147,82 @@ class _FilterPageState extends State<FilterPage> {
           ),
         ),
         Expanded(
+            child: Padding(
+          padding: EdgeInsets.only(left: 10),
           child: Row(
             children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.4,
-                child: Column(
-                  children: [
-                    SizedBox(height: 10),
-                    ElevatedButton(
+              Column(
+                children: ['games', 'leagues', 'teams'].map((category) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: boutonSelectionne == 'games'
-                              ? secondaryColor
-                              : primaryColor,
-                          foregroundColor: boutonSelectionne == 'games'
-                              ? primaryColor
-                              : secondaryColor,
-                          side: BorderSide(
-                            color: secondaryColor,
-                            width: 1.0,
-                          )),
+                        backgroundColor: boutonSelectionne == category
+                            ? secondaryColor
+                            : primaryColor,
+                        foregroundColor: boutonSelectionne == category
+                            ? primaryColor
+                            : secondaryColor,
+                        minimumSize: Size(100, 40),
+                      ),
                       onPressed: () {
                         setState(() {
-                          boutonSelectionne = 'games';
+                          boutonSelectionne = category;
                         });
                       },
-                      child: const Text('Jeux'),
+                      child: Text(category.toUpperCase()),
                     ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: boutonSelectionne == 'leagues'
-                              ? secondaryColor
-                              : primaryColor,
-                          foregroundColor: boutonSelectionne == 'leagues'
-                              ? primaryColor
-                              : secondaryColor,
-                          side: BorderSide(
-                            color: secondaryColor,
-                            width: 1.0,
-                          )),
-                      onPressed: () {
-                        setState(() {
-                          boutonSelectionne = 'leagues';
-                        });
-                      },
-                      child: const Text('Compétitions'),
-                    ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: boutonSelectionne == 'teams'
-                              ? secondaryColor
-                              : primaryColor,
-                          foregroundColor: boutonSelectionne == 'teams'
-                              ? primaryColor
-                              : secondaryColor,
-                          side: BorderSide(
-                            color: secondaryColor,
-                            width: 1.0,
-                          )),
-                      onPressed: () {
-                        setState(() {
-                          boutonSelectionne = 'teams';
-                        });
-                      },
-                      child: const Text('Équipes'),
-                    ),
-                  ],
-                ),
+                  );
+                }).toList(),
               ),
               Expanded(
                 child: ListView(
-                  children: orderedFilters
-                      .map((item) => ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  arrayFiltersSelected[boutonSelectionne]
-                                              ?.contains(item) ??
-                                          false
-                                      ? secondaryColor
-                                      : primaryColor,
-                              foregroundColor:
-                                  arrayFiltersSelected[boutonSelectionne]
-                                              ?.contains(item) ??
-                                          false
-                                      ? primaryColor
-                                      : secondaryColor,
-                            ),
-                            onPressed: () => _filtersManageSelect(item),
-                            child: Text(item),
-                          ))
-                      .toList(),
+                  children: _filtersManage().map((e) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 4.0, horizontal: 8.0),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: arrayFiltersSelected[e['category']]
+                                        ?.contains(e['item']) ??
+                                    false
+                                ? secondaryColor
+                                : primaryColor,
+                            foregroundColor: arrayFiltersSelected[e['category']]
+                                        ?.contains(e['item']) ??
+                                    false
+                                ? primaryColor
+                                : secondaryColor),
+                        onPressed: () =>
+                            _filtersManageSelect(e['category'], e['item']),
+                        child: Text(e['item']),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
           ),
-        ),
-
-        // Le bouton de réinitialisation en bas
+        )),
         Padding(
-            padding: const EdgeInsets.only(bottom: 50), // Remonte de 20 pixels
-            child: ElevatedButton(
-              onPressed: _isSelectedFilterBtn()
-                  ? () {
-                      setState(() {
-                        arrayFiltersSelected.forEach((key, value) {
-                          arrayFiltersSelected[key] = [];
+          padding: const EdgeInsets.only(bottom: 25, top: 16),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor, foregroundColor: secondaryColor),
+            onPressed:
+                arrayFiltersSelected.values.any((list) => list.isNotEmpty)
+                    ? () {
+                        setState(() {
+                          arrayFiltersSelected.forEach(
+                              (key, value) => arrayFiltersSelected[key] = []);
+                          _filtersSelectionSave();
                         });
-                        _filtersSelectionSave();
-                      });
-                    }
-                  : null, // Si null, le bouton est désactivé
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isSelectedFilterBtn()
-                    ? secondaryColor
-                    : primaryColor, // Rouge si cliquable, gris sinon
-                foregroundColor: primaryColor,
-              ),
-
-              child: Text(
-                'Réinitialiser les filtres',
-                style: TextStyle(
-                  fontSize: 20,
-                ),
-              ),
-            )),
+                      }
+                    : null,
+            child: const Text('Réinitialiser les filtres',
+                style: TextStyle(fontSize: 20)),
+          ),
+        ),
       ],
     );
   }
