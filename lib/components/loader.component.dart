@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 
 class CustomLoader extends StatefulWidget {
   final String text;
@@ -6,9 +7,7 @@ class CustomLoader extends StatefulWidget {
 
   @override
   _CustomLoaderState createState() => _CustomLoaderState();
-
 }
-
 
 class _CustomLoaderState extends State<CustomLoader> {
   @override
@@ -29,7 +28,7 @@ class _CustomLoaderState extends State<CustomLoader> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.brown,
+              color: primaryColor,
             ),
           ),
         ],
