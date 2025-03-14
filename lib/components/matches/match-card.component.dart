@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/styles/fontColors.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/intl.dart';
 
 class MatchCard extends StatelessWidget {

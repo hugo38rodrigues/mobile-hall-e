@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:hall_e_mobile/styles/fontColors.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/constants.utils.dart';
+import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 import '../loader.component.dart';
 import 'match-card.component.dart';
@@ -32,21 +34,33 @@ class _MatchListState extends State<MatchList> {
     Dio dio = Dio();
 
     try {
-      Response response = await dio.get('$apiUrl/commun');
+      Response response = await dio.get('$apiUrl/commun').timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/commun'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
 
-      // Extraire la liste des matchs depuis "data"
-      List<Map<String, dynamic>> data =
-          List<Map<String, dynamic>>.from(response.data["data"]);
-
-      setState(() {
-        matches = data;
-        isLoading = false;
-      });
+      if (response.statusCode == 200) {
+        // Extraire la liste des matchs depuis "data"
+        List<Map<String, dynamic>> data =
+            List<Map<String, dynamic>>.from(response.data["data"]);
+        setState(() {
+          matches = data;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      print('Erreur : $e');
-      setState(() {
-        isLoading = false;
-      });
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
     }
   }
 
@@ -161,13 +175,14 @@ class _MatchListState extends State<MatchList> {
     });
 
     return isLoading
-        ? CustomLoader()
+        ? CustomLoader(
+            text: loadMatchText,
+          )
         : filteredMatches.isEmpty
             ? Center(
                 child: Text(
                   "Aucun match programé pour ce jour".toUpperCase(),
                   selectionColor: secondaryColor,
-                 
                 ),
               )
             : Column(

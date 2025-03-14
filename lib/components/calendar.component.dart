@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../styles/fontColors.dart';
+import '../styles/font-colors.dart';
 
 class HorizontalCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;

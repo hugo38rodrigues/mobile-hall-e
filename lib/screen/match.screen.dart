@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/styles/fontColors.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../components/calendar.component.dart';
 import '../components/filters.component.dart';
 import '../components/matches/match-list.component.dart';

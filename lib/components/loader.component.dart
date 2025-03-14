@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 
-class CustomLoader extends StatelessWidget {
+class CustomLoader extends StatefulWidget {
+  final String text;
+  CustomLoader({required this.text});
+
+  @override
+  _CustomLoaderState createState() => _CustomLoaderState();
+}
+
+class _CustomLoaderState extends State<CustomLoader> {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -15,11 +24,11 @@ class CustomLoader extends StatelessWidget {
           ),
           SizedBox(height: 16), // Espacement
           Text(
-            "Chargement des matchs...",
+            widget.text,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.brown,
+              color: primaryColor,
             ),
           ),
         ],
