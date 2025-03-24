@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-const Color primaryColor75 = Color.fromARGB(225, 247, 239, 231);
-const Color primaryColor50 = Color.fromARGB(150, 247, 239, 231);
-const Color primaryColor = Color.fromARGB(255, 247, 239, 231);
+const Color primaryColor75 = Color.fromRGBO(242, 232, 220, 0.75);
+const Color primaryColor50 = Color.fromRGBO(242, 232, 220, 0.5);
+const Color primaryColor = Color.fromRGBO(242, 232, 220, 1);
 const Color secondaryColor = Colors.brown;
 const TextTheme textThemes = TextTheme(
   bodyMedium: TextStyle(

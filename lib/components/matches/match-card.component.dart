@@ -62,32 +62,36 @@ class MatchCard extends StatelessWidget {
           children: [
             // Ligne supérieure : Nom de la ligue + Heure
             Container(
-                decoration: BoxDecoration(color: primaryColor75),
-                child: Padding(
-                  padding:
-                      EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        gameName,
-                        style: TextStyle(fontSize: 18, color: Colors.brown),
+              decoration: BoxDecoration(color: primaryColor75),
+              child: Padding(
+                padding:
+                    EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      gameName,
+                      style: TextStyle(
+                          fontSize: 18,
+                          color: secondaryColor,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: secondaryColor,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.brown,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          hours,
-                          style: TextStyle(color: Colors.white),
-                        ),
+                      child: Text(
+                        hours,
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             // League + Bouton "Trouver un bar"
             Container(
@@ -101,28 +105,43 @@ class MatchCard extends StatelessWidget {
                   children: [
                     Text(
                       leagueName.toUpperCase(),
-                      style: TextStyle(fontSize: 14, color: Colors.brown),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: secondaryColor,
+                          fontWeight: FontWeight.bold),
                     ),
                     if (programmed.isNotEmpty)
-                      ElevatedButton(
-                        onPressed: () {}, // Action à définir
-                        style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
-                            backgroundColor: primaryColor,
+                      Container(
+                        width: 130,
+                        height: 30,
+                        child: ElevatedButton(
+                          onPressed: () {}, // Action à définir
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 5),
+                            backgroundColor: primaryColor75,
                             shadowColor: primaryColor,
-                            elevation: 4,
-                            side: BorderSide(
-                                color: secondaryColor, // Couleur de la bordure
-                                width: 1.0)),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Trouver un bar",
-                              style: TextStyle(
-                                  color: secondaryColor, fontSize: 14),
-                            ),
-                          ],
+                            elevation: 10,
+                            // side: BorderSide(
+                            //     color: secondaryColor, // Couleur de la bordure
+                            //     width: 1.0),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                "Trouver un bar",
+                                style: TextStyle(
+                                    color: secondaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_circle_right_outlined,
+                                color: secondaryColor,
+                                size: 24,
+                              )
+                            ],
+                          ),
                         ),
                       ),
                   ],
@@ -157,7 +176,9 @@ class MatchCard extends StatelessWidget {
                             maxLines: 4,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                fontSize: 16, color: Colors.brown.shade700),
+                                fontSize: 16,
+                                color: secondaryColor,
+                                fontWeight: FontWeight.bold),
                           ),
                         )
                       ]),
@@ -184,7 +205,9 @@ class MatchCard extends StatelessWidget {
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              fontSize: 16, color: Colors.brown.shade700),
+                              fontSize: 16,
+                              color: secondaryColor,
+                              fontWeight: FontWeight.bold),
                         )))
                       ])
                 ],
