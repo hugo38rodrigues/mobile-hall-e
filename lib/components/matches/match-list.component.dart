@@ -105,10 +105,6 @@ class _MatchListState extends State<MatchList> {
 
     bool isTeam1Selected = selectedTeams.contains(match['team1']["name"]);
     bool isTeam2Selected = selectedTeams.contains(match['team2']["name"]);
-
-    print(isTeam1Selected);
-    print(isTeam2Selected);
-
     return isTeam1Selected || isTeam2Selected;
   }
 
