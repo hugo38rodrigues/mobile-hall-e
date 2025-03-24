@@ -11,18 +11,18 @@ class Team {
     required this.logoUrl,
   });
 
-  factory Team.fromJson(Map<String, dynamic> json) {
+  factory Team.fromMap(Map<String, dynamic> map) {
     return Team(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      acronym: json['acronym'] ?? '',
-      logoUrl: json['logoUrl'] ?? '',
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      acronym: map['acronym'] ?? '',
+      logoUrl: map['logoUrl'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
+      'id': id,
       'name': name,
       'acronym': acronym,
       'logoUrl': logoUrl,

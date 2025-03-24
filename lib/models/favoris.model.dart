@@ -4,7 +4,7 @@ class Favorites {
   List<String> gameName;
   List<String> leagueName;
   List<Team> teams;
-  List<String> barName; 
+  List<String> barName;
 
   Favorites({
     required this.gameName,
@@ -18,7 +18,7 @@ class Favorites {
       gameName: List<String>.from(json['gameName'] ?? []),
       leagueName: List<String>.from(json['leagueName'] ?? []),
       teams: (json['teams'] as List<dynamic>?)
-              ?.map((team) => Team.fromJson(team))
+              ?.map((team) => Team.fromMap(team))
               .toList() ??
           [],
       barName: List<String>.from(json['barName'] ?? []), // Ajout de barName

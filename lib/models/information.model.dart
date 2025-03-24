@@ -14,7 +14,7 @@ class BarInformationsModel implements Informations {
   String name;
   String description;
   String address;
-  String pictures;
+  List pictures;
 
   BarInformationsModel({
     required this.name,
