@@ -46,5 +46,7 @@ flutter:
     - assets/icons/user_unselected.png
     - assets/icons/user_selected.png
     - assets/fonts/
-    - assets/gameLogos
+    - assets/gameLogos/lol.png
+    - assets/gameLogos/valorant.png
+    - assets/gameLogos/cs.png
     - .env
