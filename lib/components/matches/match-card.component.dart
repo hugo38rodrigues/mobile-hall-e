@@ -93,7 +93,7 @@ class MatchCard extends StatelessWidget {
               ),
             ),
 
-            // League + Bouton "Trouver un bar"
+            // League + "Match programmer"
             Container(
               decoration: BoxDecoration(color: primaryColor50),
               child: Padding(
@@ -111,38 +111,12 @@ class MatchCard extends StatelessWidget {
                           fontWeight: FontWeight.bold),
                     ),
                     if (programmed.isNotEmpty)
-                      Container(
-                        width: 130,
-                        height: 30,
-                        child: ElevatedButton(
-                          onPressed: () {}, // Action à définir
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 5),
-                            backgroundColor: primaryColor75,
-                            shadowColor: primaryColor,
-                            elevation: 10,
-                            // side: BorderSide(
-                            //     color: secondaryColor, // Couleur de la bordure
-                            //     width: 1.0),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Trouver un bar",
-                                style: TextStyle(
-                                    color: secondaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.arrow_circle_right_outlined,
-                                color: secondaryColor,
-                                size: 24,
-                              )
-                            ],
-                          ),
-                        ),
+                      Text(
+                        "Match programmé",
+                        style: TextStyle(
+                            color: secondaryColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold),
                       ),
                   ],
                 ),
