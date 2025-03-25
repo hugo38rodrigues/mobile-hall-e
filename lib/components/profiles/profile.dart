@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/profiles/favorites-profile.component.dart';
 import 'package:hall_e_mobile/components/profiles/informations-profile.component.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 
@@ -13,7 +12,6 @@ class Profile extends ConsumerWidget {
     return SingleChildScrollView(
         child: Column(children: [
       InformationsProfile(),
-      FavoritesProfile(),
       ElevatedButton(
         onPressed: () async {
           // Déconnecter l'utilisateur
