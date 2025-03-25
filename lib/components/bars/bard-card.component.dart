@@ -109,79 +109,75 @@ class _BardCardState extends State<BarCard> {
                 padding:
                     EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
                 child: Column(
-                  children: programmationMatch
-                      .map((prog) => Row(
-                            children: [
-                              Container(
-                                alignment: Alignment(0, 0),
-                                child: Text(
-                                  getDate(prog.date), // Affiche le nom du match
-                                  style: TextStyle(
-                                      fontSize: 18,
+                  children: filterByDateMatch(programmationMatch)
+                      .map(
+                        (prog) => Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceBetween, // Répartit les éléments
+                          children: [
+                            SizedBox(
+                              width: 60, // Taille fixe pour la date
+                              child: Text(
+                                getDate(prog.date),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    color: secondaryColor,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            SizedBox(width: 15),
+                            Image(
+                              width: 30,
+                              height: 30,
+                              image: AssetImage(getGame(prog.gameName)
+                              
+                            ),
+                            ),
+                            Expanded(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment
+                                    .center, // Centre les équipes
+                                children: [
+                                  Text(
+                                    prog.team1.acronym,
+                                    style: TextStyle(
                                       color: secondaryColor,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              // Image(
-                              //   width: 30,
-                              //   height: 30,
-                              //   image: AssetImage(
-                              //     getGame(prog.gameName),
-                              //   ),
-                              // ),
-                              SizedBox(width: 10),
-                              Container(
-                                margin: EdgeInsets.only(left: 40),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      prog.team1
-                                          .acronym, // Affiche le nom du match
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color: secondaryColor,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(
-                                      width: 8,
-                                    ),
-                                    Text(
-                                      'VS', // Affiche le nom du match
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          color: secondaryColor,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(
-                                      width: 8,
-                                    ),
-                                    Text(
-                                      prog.team2
-                                          .acronym, // Affiche le nom du match
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color: secondaryColor,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Container(
-                                margin: EdgeInsets.only(left: 10),
-                                child: Text(
-                                  getHours(prog.date),
-                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 18,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'VS',
+                                    style: TextStyle(color: secondaryColor),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    prog.team2.acronym,
+                                    style: TextStyle(
                                       color: secondaryColor,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              )
-                            ],
-                          ))
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 70, // Taille fixe pour l'heure
+                              child: Text(
+                                getHours(prog.date),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    color: secondaryColor,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                       .toList(),
                 ),
               ),
