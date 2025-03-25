@@ -15,7 +15,7 @@ class BarCard extends StatefulWidget {
 class _BardCardState extends State<BarCard> {
   
   String getDate(String date) {
-    DateTime dateTime = DateTime.parse(date);
+    DateTime dateTime = DateTime.parse(date).toLocal();
     int month = dateTime.month;
     int day = dateTime.day;
     int monthLenght = month.toString().length;
