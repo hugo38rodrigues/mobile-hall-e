@@ -39,13 +39,26 @@ class _BardCardState extends State<BarCard> {
   }
 
   String getHours(String date) {
-    String hours = date
-        .split("T")[1]
-        .split(":")
-        .sublist(0, 2)
-        .join(":")
-        .replaceFirst(":", "H");
-    return hours.toString();
+    DateTime datetime = DateTime.parse(date).toLocal();
+    int hours = datetime.hour;
+    int mins = datetime.minute;
+    String? formatedMins;
+
+    if (mins.toString().length == 1) {
+      formatedMins = '0$mins';
+    }
+
+    return '${hours}H${formatedMins ?? mins}';
+  }
+
+  List<ProgrammationMatch> filterByDateMatch(
+      List<ProgrammationMatch> programmationMatches) {
+    programmationMatches.sort((a, b) {
+      DateTime dateA = DateTime.parse(a.date);
+      DateTime dateB = DateTime.parse(b.date);
+      return dateA.compareTo(dateB);
+    });
+    return programmationMatches;
   }
 
   @override
