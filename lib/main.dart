@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'styles/font-colors.dart';
-import 'screen/home.screen.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Ajoutez cette importation
+
+import 'screen/home.screen.dart';
 
 void main() async {
   WidgetsFlutterBinding
@@ -59,7 +60,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       title: 'Ezone',
       theme: ThemeData(
-        fontFamily: 'Lexend',
         textTheme: textThemes,
       ),
       home: HomeScreen(), // Vérifie l'authentification au démarrage

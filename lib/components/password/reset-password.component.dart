@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:hall_e_mobile/utils/dio.utils.dart';
@@ -8,7 +9,6 @@ import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 class ResetPassword extends StatefulWidget {
   final String idUser;
-
 
   ResetPassword({required this.idUser});
 
@@ -31,7 +31,7 @@ class _ResetPasswordState extends State<ResetPassword> {
   bool isNotSpecialChar = false;
   bool isNotEightMinimal = false;
 
-  bool _isLoading = false;
+  bool isLoading = false;
 
   void _setPasswordError(String message) {
     errorPasswordMessage = message;
@@ -117,13 +117,13 @@ class _ResetPasswordState extends State<ResetPassword> {
   }
 
   Future sendResetPassword(String newPassword) async {
-    _isLoading = true;
+    isLoading = true;
 
     String? apiUrl = dotenv.env['API_URL'];
 
     try {
       setState(() {
-        _isLoading = true;
+        isLoading = true;
       });
 
       Response response = await request(
@@ -135,7 +135,7 @@ class _ResetPasswordState extends State<ResetPassword> {
         await Future.delayed(Duration(seconds: 1));
         setState(() {
           Navigator.pop(context, "Mot de passe réinitialisé avec succès !");
-          _isLoading = false;
+          isLoading = false;
         });
       }
     } catch (e) {
@@ -143,7 +143,7 @@ class _ResetPasswordState extends State<ResetPassword> {
         await Future.delayed(Duration(seconds: 1));
         setState(() {
           Navigator.pop(context);
-          _isLoading = false;
+          isLoading = false;
         });
         // Appelle la fonction de gestion des erreurs
         handleError(e, context);
@@ -163,8 +163,7 @@ class _ResetPasswordState extends State<ResetPassword> {
     bool isValidNewPassword = validatePasswords(newPassword);
     bool isValidConfirmNewPassword = isValidConfirmPassword(confirmPassword);
 
-    if (
-        newPassword != confirmPassword) {
+    if (newPassword != confirmPassword) {
       setState(() {
         _setPasswordError('Les mots de passe ne correspondent pas');
         _setConfirmPasswordError('Les mots de passe ne correspondent pas');
@@ -330,16 +329,18 @@ class _ResetPasswordState extends State<ResetPassword> {
             ),
           ),
           SizedBox(
-            width: 250,
-            child: ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: secondaryColor),
-                onPressed: onSubmit,
-                child: Text(
-                  'Changer votre mot de passe',
-                  style: TextStyle(color: primaryColor),
-                )),
-          )
+              width: 250,
+              child: isLoading
+                  ? CustomLoader(text: "Changement de mot de passe")
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: secondaryColor),
+                      onPressed: onSubmit,
+                      child: Text(
+                        'Changer votre mot de passe',
+                        style: TextStyle(color: primaryColor),
+                      ),
+                    ))
         ],
       ),
     );
