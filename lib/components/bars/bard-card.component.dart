@@ -28,13 +28,13 @@ class _BardCardState extends State<BarCard> {
   String getGame(String gameName) {
     switch (gameName) {
       case "Valorant":
-        return "assets/gameLogos/lol.png";
+        return "assets/gameLogos/valorant.png";
       case "League of legends":
         return "assets/gameLogos/lol.png";
       case "Cs go":
-        return "assets/gameLogos/lol.png";
+        return "assets/gameLogos/cs.png";
       default:
-        return '';
+        return "assets/gameLogos/lol.png";
     }
   }
 
