@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/components/bars/bar-list.component.dart';
+import 'package:hall_e_mobile/components/bars-screen/bar-list.component.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 
 class BarScreen extends StatelessWidget {
