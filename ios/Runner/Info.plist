@@ -49,5 +49,9 @@
 	<string>Cette application a besoin d'accéder à votre position pour afficher votre emplacement sur la carte.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Cette application nécessite un accès permanent à votre position pour une meilleure expérience.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+    <string>google.maps</string>
+	</array>
 </dict>
 </plist>
