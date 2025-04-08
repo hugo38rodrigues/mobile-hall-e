@@ -140,7 +140,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                     Expanded(
                       child: Text(
                         widget.team1,
-                        textAlign: TextAlign.right,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: secondaryColor,
                           fontSize: 14,
@@ -151,7 +151,6 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                         overflow: TextOverflow.visible, // Évite "..."
                       ),
                     ),
-                    SizedBox(width: 10),
                     GestureDetector(
                       onTap: addFavorite,
                       child: Icon(
@@ -159,7 +158,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                         color: secondaryColor,
                       ),
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 20),
                     Container(
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -176,7 +175,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 20),
                     GestureDetector(
                       onTap: addFavorite,
                       child: Icon(
@@ -184,11 +183,10 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                         color: secondaryColor,
                       ),
                     ),
-                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         widget.team2,
-                        textAlign: TextAlign.left,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: secondaryColor,
                           fontSize: 14,

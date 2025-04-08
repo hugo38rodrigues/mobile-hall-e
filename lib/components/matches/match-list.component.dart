@@ -182,7 +182,8 @@ class _MatchListState extends State<MatchList> {
                 ),
               )
             : Column(
-                children: filteredMatches.map((match) {
+                children: filteredMatches.map(
+                (match) {
                   return MatchCard(
                     programmed: match['programmed'],
                     leagueName: match['leagueName'],
@@ -196,7 +197,7 @@ class _MatchListState extends State<MatchList> {
                     team2Logo: match['team2']['logoUrl'],
                     team2Name: match['team2']['name'],
                   );
-                }).toList(),
-              );
+                },
+              ).toList(),);
   }
 }
