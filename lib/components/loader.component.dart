@@ -28,7 +28,7 @@ class _CustomLoaderState extends State<CustomLoader> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: primaryColor,
+              color: secondaryColor,
             ),
           ),
         ],
