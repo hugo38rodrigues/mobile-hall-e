@@ -1,49 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:hall_e_mobile/models/location.model.dart';
+import 'package:hall_e_mobile/models/location-services.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
+
 import 'home-wrapper.screen.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+class LandingPage extends ConsumerStatefulWidget {
+  const LandingPage({super.key});
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<LandingPage> createState() => _LandingPageState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _LandingPageState extends ConsumerState<LandingPage> {
   bool locationDenied = false;
 
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestLocationPermission();
+      String role = ref.watch(accountProvider).role;
+      if (role != 'bar') {
+        location();
+      }
     });
   }
 
-  // Récupérer la position actuelle de l'utilisateur
-  Future<void> _fetchUserLocation() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-
-      // Mettre à jour l'état global avec Riverpod
-       ref.read(accountProvider.notifier).updateAccount({
-        'userLocation': Location(
-          isActivated: true,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        ),
-      });
-    } catch (e) {
-      debugPrint("Erreur localisation : $e");
+  void location() async {
+    final locationService = LocationService(ref: ref);
+    final status = await locationService.requestAndFetchLocation();
+    switch (status) {
+      case LocationStatus.success:
+        // OK
+        break;
+      case LocationStatus.serviceDisabled:
+        _showLocationDisabledDialog();
+        break;
+      case LocationStatus.permissionDenied:
+      case LocationStatus.permissionDeniedForever:
+        showPermissionDeniedMessage();
+        break;
+      case LocationStatus.error:
+        _showErrorSnackbar();
+        break;
     }
   }
 
-  // Afficher un message si la localisation est désactivée
   void _showLocationDisabledDialog() {
     showDialog(
       context: context,
@@ -51,6 +55,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text("Localisation désactivée"),
         content: const Text(
             "Veuillez activer la localisation pour afficher votre position sur la carte."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorSnackbar() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Erreur"),
+        content: const Text("Une erreur est survenue veuillez réessayer"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -72,30 +92,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: Colors.red,
       ),
     );
-  }
-
-  // Demander la permission et récupérer la position
-  Future<void> _requestLocationPermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _showLocationDisabledDialog();
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        showPermissionDeniedMessage();
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      showPermissionDeniedMessage();
-      return;
-    }
-    _fetchUserLocation();
   }
 
   @override
