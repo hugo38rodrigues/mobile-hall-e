@@ -1,7 +1,7 @@
 import 'package:hall_e_mobile/models/favoris.model.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
 import 'package:hall_e_mobile/models/location.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.dart';
+import 'package:hall_e_mobile/models/programmationMatch.model.dart';
 
 class User {
   String id;

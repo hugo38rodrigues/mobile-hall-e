@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/models/favoris.model.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
