@@ -1,16 +1,24 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/map/map-wrapper.dart';
 import 'package:hall_e_mobile/components/my-app-bar.component.dart';
+import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import 'package:intl/intl.dart';
 
-class MatchDetailsPage extends StatefulWidget {
+class MatchDetailsPage extends ConsumerStatefulWidget {
   final String leagueName;
   final String gameName;
   final String date;
   final List<dynamic> barList;
   final String team1;
   final String team2;
+  final String team1Id;
+  final String team2Id;
 
   MatchDetailsPage({
     required this.leagueName,
@@ -18,21 +26,29 @@ class MatchDetailsPage extends StatefulWidget {
     required this.date,
     required this.team1,
     required this.team2,
+    required this.team1Id,
+    required this.team2Id,
     required this.barList,
   });
   @override
   _MatchDetailsPageState createState() => _MatchDetailsPageState();
 }
 
-class _MatchDetailsPageState extends State<MatchDetailsPage> {
-  bool isFavorite = false;
+class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
   String hours = '';
   String days = '';
+  bool isConnected = false;
+  List gameFavorites = [];
+  List leagueFavorites = [];
+  List<String> teamsFavorites = [];
+  List barNameFavorites = [];
+  String idUser = "";
 
   @override
   void initState() {
     super.initState();
     getHoursAndDays();
+    getFavorites();
   }
 
   getHoursAndDays() {
@@ -50,14 +66,286 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
     });
   }
 
-  addFavorite() {
-    setState(() {
-      isFavorite = !isFavorite;
-    });
+  getFavorites() {
+    User profile = ref.read(accountProvider);
+    if (profile.role != 'guest') {
+      setState(() {
+        gameFavorites = profile.favorites.gameName;
+        leagueFavorites = profile.favorites.leagueName;
+        teamsFavorites =
+            profile.favorites.teams.map((team) => team.name).toList();
+        barNameFavorites = profile.favorites.barName;
+        idUser = profile.id;
+        isConnected = true;
+      });
+    }
+  }
+
+  addFavoriteGame(gameName) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/game',
+              data: {"idUser": idUser, "gameName": gameName},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  addFavoriteLeague(leagueName) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/league',
+              data: {"idUser": idUser, "leagueName": leagueName},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  addFavoriteTeam(idTeam) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/team',
+              data: {"idUser": idUser, "idTeam": idTeam},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteGame(gameName) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/game',
+              data: {"idUser": idUser, "gameName": gameName},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteLeague(leagueName) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/league',
+              data: {"idUser": idUser, "leagueName": leagueName},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteTeam(idTeam) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/team',
+              data: {"idUser": idUser, "idTeam": idTeam},
+              options: Options(
+                headers: {"Content-Type": "application/json"},
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  handleStateGameFavorites(gameName) async {
+    bool gameIsPresent = gameFavorites.any((game) => game == gameName);
+    gameIsPresent
+        ? await deleteFavoriteGame(gameName)
+        : await addFavoriteGame(gameName);
+  }
+
+  handleStateLeagueFavorites(leagueName) async {
+    bool leagueIsPresent =
+        leagueFavorites.any((league) => league == leagueName);
+    leagueIsPresent
+        ? await deleteFavoriteLeague(leagueName)
+        : await addFavoriteLeague(leagueName);
+  }
+
+  handleStateTeamFavorites(teamName, teamId) async {
+    bool teamIsPresent = teamsFavorites.any((team) => team == teamName);
+    teamIsPresent
+        ? await deleteFavoriteTeam(teamId)
+        : await addFavoriteTeam(teamId);
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isFavoriteGame =
+        gameFavorites.any((gameInArray) => gameInArray == widget.gameName);
+    bool isFavoriteLeague = leagueFavorites
+        .any((leagueInArray) => leagueInArray == widget.leagueName);
+    bool isFavoriteTeam1 =
+        teamsFavorites.any((team1InArray) => team1InArray == widget.team1);
+    bool isFavoriteTeam2 =
+        teamsFavorites.any((team2InArray) => team2InArray == widget.team2);
+    String role = ref.watch(accountProvider).role;
+    bool isNotGuest = role != 'guest';
+
     return Scaffold(
       appBar: MyAppBar(),
       backgroundColor: primaryColor,
@@ -76,11 +364,17 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                             color: secondaryColor, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: addFavorite,
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_outline,
-                          color: secondaryColor,
+                      Visibility(
+                        visible: isNotGuest,
+                        child: GestureDetector(
+                          onTap: () =>
+                              handleStateGameFavorites(widget.gameName),
+                          child: Icon(
+                            isFavoriteGame
+                                ? Icons.favorite
+                                : Icons.favorite_outline,
+                            color: secondaryColor,
+                          ),
                         ),
                       )
                     ],
@@ -116,11 +410,17 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                             color: secondaryColor, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: addFavorite,
-                        child: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_outline,
-                          color: secondaryColor,
+                      Visibility(
+                        visible: isNotGuest,
+                        child: GestureDetector(
+                          onTap: () =>
+                              {handleStateLeagueFavorites(widget.leagueName)},
+                          child: Icon(
+                            isFavoriteLeague
+                                ? Icons.favorite
+                                : Icons.favorite_outline,
+                            color: secondaryColor,
+                          ),
                         ),
                       )
                     ],
@@ -151,11 +451,18 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                         overflow: TextOverflow.visible, // Évite "..."
                       ),
                     ),
-                    GestureDetector(
-                      onTap: addFavorite,
-                      child: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_outline,
-                        color: secondaryColor,
+                    Visibility(
+                      visible: isNotGuest,
+                      child: GestureDetector(
+                        onTap: () => {
+                          handleStateTeamFavorites(widget.team1, widget.team1Id)
+                        },
+                        child: Icon(
+                          isFavoriteTeam1
+                              ? Icons.favorite
+                              : Icons.favorite_outline,
+                          color: secondaryColor,
+                        ),
                       ),
                     ),
                     SizedBox(width: 20),
@@ -176,11 +483,18 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                       ),
                     ),
                     SizedBox(width: 20),
-                    GestureDetector(
-                      onTap: addFavorite,
-                      child: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_outline,
-                        color: secondaryColor,
+                    Visibility(
+                      visible: isNotGuest,
+                      child: GestureDetector(
+                        onTap: () => {
+                          handleStateTeamFavorites(widget.team2, widget.team2Id)
+                        },
+                        child: Icon(
+                          isFavoriteTeam2
+                              ? Icons.favorite
+                              : Icons.favorite_outline,
+                          color: secondaryColor,
+                        ),
                       ),
                     ),
                     Expanded(

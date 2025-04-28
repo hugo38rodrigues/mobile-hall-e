@@ -8,18 +8,21 @@ import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import '../loader.component.dart';
 import 'match-card.component.dart';
 
-class MatchList extends StatefulWidget {
+class MatchList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
   final Map<String, List<dynamic>> filtersList;
-  // final List<String> favoriteList;
+  final bool isFavoritesSelected;
 
-  MatchList({required this.selectedDate, required this.filtersList});
+  MatchList(
+      {required this.selectedDate,
+      required this.filtersList,
+      required this.isFavoritesSelected});
 
   @override
   _MatchListState createState() => _MatchListState();
 }
 
-class _MatchListState extends State<MatchList> {
+class _MatchListState extends ConsumerState<MatchList> {
   List<Map<String, dynamic>> matches = [];
   bool isLoading = true;
 
@@ -86,17 +89,28 @@ class _MatchListState extends State<MatchList> {
 
   /// Filtre les matchs du jour sélectionné
   bool filterByDate(Map<String, dynamic> match, DateTime targetDate) {
-    DateTime matchDate = DateTime.parse(match["date"]);
+    // Parse la date du match en local (important si le backend envoie du UTC)
+    DateTime matchDate = DateTime.parse(match["date"]).toLocal();
 
-    // Si c'est aujourd'hui, appliquer filterMatchByBo
-    if (isSameDay(matchDate, DateTime.now())) {
-      int adjustedHour = matchDate.hour + filterMatchByBo(match);
-      if (adjustedHour <= DateTime.now().hour) {
-        return false;
-      }
+    // Définir les bornes du jour sélectionné (00:00 à 23:59:59.999)
+    DateTime startOfDay =
+        DateTime(targetDate.year, targetDate.month, targetDate.day);
+    DateTime endOfDay =
+        startOfDay.add(Duration(days: 1)).subtract(Duration(milliseconds: 1));
+
+    // Ne garder que les matchs compris dans cette journée
+    bool isInSelectedDay =
+        matchDate.isAfter(startOfDay) && matchDate.isBefore(endOfDay);
+
+    if (!isInSelectedDay) return false;
+
+    // Si on est sur aujourd’hui, on exclut les matchs déjà passés dans la journée
+    DateTime now = DateTime.now();
+    if (isSameDay(targetDate, now)) {
+      return matchDate.isAfter(now);
     }
 
-    return isSameDay(matchDate, targetDate);
+    return true;
   }
 
   /// Filtre par équipes sélectionnées (peut en avoir plusieurs)
@@ -124,45 +138,95 @@ class _MatchListState extends State<MatchList> {
   }
 
   /// Filtre par favoris (équipes, ligues ou jeux)
-  bool filterByFavorites(Map<String, dynamic> match,
-      List<String>? favoriteNames, bool isFavoritesActive) {
-    // Le filtre favoris ne s'active que si le bouton est sélectionné
-    if (!isFavoritesActive) return true;
+  bool filterByFavorites(Map<String, dynamic> match, Favorites favoris) {
+    String role = ref.watch(accountProvider).role;
+    bool isFavoriteBarName = false;
 
-    bool isFavoriteTeam = favoriteNames?.contains(match['team1']["name"]) ??
-        false || favoriteNames!.contains(match["team2"]["name"]);
-    bool isFavoriteLeague =
-        favoriteNames?.contains(match["leagueName"]) ?? false;
-    bool isFavoriteGame = favoriteNames?.contains(match["gameName"]) ?? false;
+    List<String> arrayTeams =
+        favoris.teams.map<String>((team) => team.name.toString()).toList();
 
-    return isFavoriteTeam || isFavoriteLeague || isFavoriteGame;
+    bool isFavoriteTeam = arrayTeams.contains(match['team1']["name"]) ||
+        arrayTeams.contains(match['team2']['name']);
+
+    bool isFavoriteLeague = favoris.leagueName.contains(match["leagueName"]);
+    
+    bool isFavoriteGame = favoris.gameName.contains(match["gameName"]);
+
+    if (role == 'client') {
+       // Créer une liste des noms de bars programmés
+      List<String> programmedBarNames = match["programmed"]
+          .map<String>((bar) => bar["name"].toString())
+          .toList();
+
+      // Vérifier si l'un des noms dans `favoris.barName` est dans `programmedBarNames`
+      isFavoriteBarName = favoris.barName
+          .any((barName) => programmedBarNames.contains(barName));
+    }
+
+    return isFavoriteTeam ||
+        isFavoriteLeague ||
+        isFavoriteGame ||
+        isFavoriteBarName;
+  }
+
+  bool filterByBarName(
+    Map<String, dynamic> match,
+    List<dynamic>? selectedBarName,
+  ) {
+    if (selectedBarName == null || selectedBarName.isEmpty) return true;
+    if (match["programmed"].isEmpty) {
+      return false;
+    }
+
+    // On récupère tous les noms de bars qui ont programmé ce match
+    List<String> programmedBarNames = match["programmed"]
+        .map<String>((bar) => bar["name"].toString())
+        .toList();
+
+    // On vérifie s'il y a au moins un bar programmé dans la sélection
+    return programmedBarNames
+        .any((barName) => selectedBarName.contains(barName));
   }
 
   /// Fonction principale de filtrage
-  List<Map<String, dynamic>> filterMatchesByDay(
+  List<Map<String, dynamic>> filterMatches(
     DateTime targetDate,
     List<dynamic>? selectedTeams,
     List<dynamic>? selectedGames,
     List<dynamic>? selectedLeagues,
-    // List<String>? favoriteNames,
-    // {bool isFavoritesActive = false}
+    List<dynamic>? selectedBarName,
   ) {
     return matches.where((match) {
-      return filterByDate(match, targetDate) &&
-          (filterByTeams(match, selectedTeams) &&
-              filterByGames(match, selectedGames) &&
-              filterByLeagues(match, selectedLeagues)); //&&
-      // filterByFavorites(match, favoriteNames, isFavoritesActive);
+      if (widget.isFavoritesSelected) {
+        // Si favoris sélectionnés, ne filtrer que par les favoris et ignorer les autres filtres
+        return filterByFavorites(match, ref.watch(accountProvider).favorites) &&
+            filterByDate(
+                match, targetDate); // Seul le filtre de date s'applique
+      } else {
+        // Applique tous les filtres quand favoris n'est pas activé
+        return filterByDate(match, targetDate) &&
+            filterByTeams(match, selectedTeams) &&
+            filterByGames(match, selectedGames) &&
+            filterByLeagues(match, selectedLeagues) &&
+            filterByBarName(match, selectedBarName);
+      }
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    String role = ref.watch(accountProvider).role;
     List? selectedGames = widget.filtersList['games'];
     List? selectedLeagues = widget.filtersList['leagues'];
     List? selectedTeams = widget.filtersList['teams'];
-    List<Map<String, dynamic>> filteredMatches = filterMatchesByDay(
-        widget.selectedDate, selectedTeams, selectedGames, selectedLeagues);
+    List? selectedBarName = widget.filtersList['barName'];
+
+    List<Map<String, dynamic>> filteredMatches = filterMatches(
+        widget.selectedDate,
+        selectedTeams,
+        selectedGames,
+        selectedLeagues,
+        selectedBarName);
 
     filteredMatches.sort((a, b) {
       DateTime dateA = DateTime.parse(a['date']);

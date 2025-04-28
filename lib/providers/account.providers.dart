@@ -39,7 +39,7 @@ class AccountNotifier extends StateNotifier<User> {
         email: accountUpdate['email'] ?? state.email,
         role: accountUpdate['role'] ?? state.role,
         favorites: accountUpdate.containsKey('favorites')
-            ? Favorites.fromJson(accountUpdate['favorites'])
+            ? Favorites.fromMap(accountUpdate['favorites'], state.favorites)
             : state.favorites,
         informations: accountUpdate.containsKey('informations')
             ? Informations.fromJson(

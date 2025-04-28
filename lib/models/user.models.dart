@@ -28,7 +28,7 @@ class User {
         role: map['role'] ?? 'guest',
         informations:
             Informations.fromJson(map['informations'] ?? {}, map['role']),
-        favorites: Favorites.fromJson(map['favorites'] ?? {}),
+        favorites: Favorites.fromMapInitial(map['favorites']),
         programmations: (map['programmedMatches'] is List)
             ? List<ProgrammationMatch>.from((map['programmedMatches'] as List)
                 .map((element) => ProgrammationMatch.fromJson(element ?? {})))
