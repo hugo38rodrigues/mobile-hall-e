@@ -23,7 +23,7 @@ class _SendCodeState extends State<SendCode> {
   Future sendCode(String code) async {
     try {
       Response response = await request({'idUser': widget.idUser, 'code': code},
-          '$apiUrl/commun/verify-code', 'post');
+          '$apiUrl/verify-code', 'post');
       if (response.statusCode == 200) {
         await Future.delayed(Duration(seconds: 1));
         setState(() {

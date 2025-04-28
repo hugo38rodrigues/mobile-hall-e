@@ -40,12 +40,12 @@ class _MatchListState extends ConsumerState<MatchList> {
     Dio dio = Dio();
 
     try {
-      Response response = await dio.get('$apiUrl/commun').timeout(
+      Response response = await dio.get('$apiUrl/').timeout(
         Duration(seconds: 10),
         onTimeout: () {
           // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/commun'),
+            requestOptions: RequestOptions(path: '$apiUrl/'),
             type: DioExceptionType
                 .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
             message: 'Timeout',

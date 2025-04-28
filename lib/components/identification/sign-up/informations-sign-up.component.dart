@@ -55,7 +55,7 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
 
     try {
       Response response = await dio
-          .post('$apiUrl/commun/sign-up',
+          .post('$apiUrl/sign-up',
               data: {
                 'email': credentiels.email,
                 'password': credentiels.password,
@@ -70,7 +70,7 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
         onTimeout: () {
           // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/commun/sign-up'),
+            requestOptions: RequestOptions(path: '$apiUrl/sign-up'),
             type: DioExceptionType
                 .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
             message: 'Timeout',

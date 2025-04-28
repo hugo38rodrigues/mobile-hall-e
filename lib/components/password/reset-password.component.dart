@@ -128,7 +128,7 @@ class _ResetPasswordState extends State<ResetPassword> {
 
       Response response = await request(
           {'id': widget.idUser, 'password': newPassword},
-          '$apiUrl/commun/reset-password',
+          '$apiUrl/reset-password',
           'post');
 
       if (response.statusCode == 200) {
