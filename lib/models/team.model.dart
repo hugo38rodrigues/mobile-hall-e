@@ -13,7 +13,7 @@ class Team {
 
   factory Team.fromMap(Map<String, dynamic> map) {
     return Team(
-      id: map['id'] ?? '',
+      id: map['_id'] ?? '',
       name: map['name'] ?? '',
       acronym: map['acronym'] ?? '',
       logoUrl: map['logoUrl'] ?? '',
