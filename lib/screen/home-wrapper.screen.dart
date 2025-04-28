@@ -92,8 +92,8 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
       ),
       bottomNavigationBar: Container(
         color: primaryColor,
-        height: 70,
-        padding: EdgeInsets.symmetric(horizontal: 10),
+        height: 80,
+        padding: EdgeInsets.only(bottom: 10),
         child: Stack(
           children: [
             // 🎯 Capsule animée avec primaryColor
@@ -105,7 +105,7 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
               child: IntrinsicWidth(
                 child: Container(
                   height: 50,
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: secondaryColor, // 🎨 Couleur de fond de la capsule
                     borderRadius: BorderRadius.circular(25),
