@@ -87,15 +87,14 @@ class _BarListState extends ConsumerState<BarList> {
         _geoCache[address] = coords;
         return coords;
       }
-      
     } catch (e) {
       print("Erreur API: $e");
     }
- 
+
     return null;
   }
 
- Future<List<User>> filterBarsWithinRadius(
+  Future<List<User>> filterBarsWithinRadius(
     double latitudeUser,
     double longitudeUser,
     List<User> bars,
@@ -136,6 +135,7 @@ class _BarListState extends ConsumerState<BarList> {
         .where((bar) => bar.programmations.isNotEmpty)
         .toList();
   }
+
   @override
   Widget build(BuildContext context) {
     final User profile = ref.watch(accountProvider);

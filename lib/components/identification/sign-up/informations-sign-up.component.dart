@@ -28,7 +28,6 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
 
   void getInformations(newInformations) {
     setState(() {
-      print(newInformations);
       informations = newInformations;
     });
   }
