@@ -70,16 +70,37 @@ class _MatchListState extends ConsumerState<MatchList> {
     }
   }
 
-  /// Vérifie le nombre de manches (Bo) et retourne un ajustement d'heure
-  int filterMatchByBo(Map<String, dynamic> match) {
-    String numberOfGames = match["numberOfGame"];
+  Future<void> sendProgrammationMatch(matchId) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+    String id = ref.watch(accountProvider).id;
 
-    if (numberOfGames == '1') {
-      return 1;
-    } else if (numberOfGames == '3') {
-      return 3;
-    } else {
-      return 4;
+    try {
+      Response response = await dio
+          .post('$apiUrl/bar', data: {"matchId": matchId, "barId": id}).timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/bar'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Extraire la liste des matchs depuis "data"
+        setState(() {
+          fetchMatches();
+        });
+      }
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
     }
   }
 
@@ -250,21 +271,26 @@ class _MatchListState extends ConsumerState<MatchList> {
               )
             : Column(
                 children: filteredMatches.map(
-                (match) {
-                  return MatchCard(
-                    programmed: match['programmed'],
-                    leagueName: match['leagueName'],
-                    gameName: match['gameName'],
-                    idMatch: match['idMatch'],
-                    date: match['date'],
-                    team1Acronym: match['team1']['acronym'],
-                    team1Logo: match['team1']['logoUrl'],
-                    team1Name: match['team1']['name'],
-                    team2Acronym: match['team2']['acronym'],
-                    team2Logo: match['team2']['logoUrl'],
-                    team2Name: match['team2']['name'],
-                  );
-                },
-              ).toList(),);
+                  (match) {
+                    return MatchCard(
+                      role: role,
+                      sendProgrammationMatch: sendProgrammationMatch,
+                      programmed: match['programmed'],
+                      leagueName: match['leagueName'],
+                      gameName: match['gameName'],
+                      idMatch: match['_id'],
+                      date: match['date'],
+                      team1Acronym: match['team1']['acronym'],
+                      team1Id: match['team1']['_id'],
+                      team2Id: match['team2']['_id'],
+                      team1Logo: match['team1']['logoUrl'],
+                      team1Name: match['team1']['name'],
+                      team2Acronym: match['team2']['acronym'],
+                      team2Logo: match['team2']['logoUrl'],
+                      team2Name: match['team2']['name'],
+                    );
+                  },
+                ).toList(),
+              );
   }
 }

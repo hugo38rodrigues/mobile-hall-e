@@ -4,7 +4,10 @@ import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/intl.dart';
 
 class MatchCard extends StatelessWidget {
+  final String role;
   final String idMatch;
+  final String team1Id;
+  final String team2Id;
   final List<dynamic> programmed;
   final String leagueName;
   final String gameName;
@@ -15,9 +18,13 @@ class MatchCard extends StatelessWidget {
   final String team2Acronym;
   final String? team2Logo;
   final String team2Name;
+  final Function sendProgrammationMatch;
 
   const MatchCard({
+    required this.role,
     required this.idMatch,
+    required this.team1Id,
+    required this.team2Id,
     required this.programmed,
     required this.leagueName,
     required this.gameName,
@@ -28,6 +35,7 @@ class MatchCard extends StatelessWidget {
     required this.team2Acronym,
     required this.team2Logo,
     required this.team2Name,
+    required this.sendProgrammationMatch,
     Key? key,
   }) : super(key: key);
 
@@ -61,6 +69,8 @@ class MatchCard extends StatelessWidget {
                           leagueName: leagueName,
                           team1: team1Name,
                           team2: team2Name,
+                          team1Id: team1Id,
+                          team2Id: team2Id,
                           barList: programmed,
                         )));
           },
@@ -140,21 +150,32 @@ class MatchCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              leagueName.toUpperCase(),
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: secondaryColor,
-                                  fontWeight: FontWeight.bold),
+                            Flexible(
+                              child: Text(
+                                leagueName.toUpperCase(),
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: secondaryColor,
+                                    fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            if (programmed.isNotEmpty)
+                            if (role == 'bar')
+                              IconButton(
+                                  onPressed: () =>
+                                      sendProgrammationMatch(idMatch),
+                                  color: secondaryColor,
+                                  icon: Icon(programmed.isNotEmpty
+                                      ? Icons.close
+                                      : Icons.add_circle))
+                            else if (programmed.isNotEmpty)
                               Text(
                                 "Match programmé",
                                 style: TextStyle(
                                     color: secondaryColor,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold),
-                              ),
+                              )
                           ],
                         ),
                       ),
