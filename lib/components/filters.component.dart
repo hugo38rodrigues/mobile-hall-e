@@ -1,59 +1,78 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../styles/font-colors.dart';
 
-class FilterPage extends StatefulWidget {
+class FilterPage extends ConsumerStatefulWidget {
   final Function(Map<String, List<String>>) getSelectedFilters;
-  FilterPage({required this.getSelectedFilters});
+  final Function(bool) getIsFavorisSelected;
+  final bool isFavoritesSelected;
+
+  const FilterPage(
+      {required this.getSelectedFilters,
+      required this.getIsFavorisSelected,
+      required this.isFavoritesSelected,
+      Key? key})
+      : super(key: key);
 
   @override
   _FilterPageState createState() => _FilterPageState();
 }
 
-class _FilterPageState extends State<FilterPage> {
-  String boutonSelectionne = 'games';
+class _FilterPageState extends ConsumerState<FilterPage> {
+  String? userRole;
+  String selectedButton = 'games';
+  bool _resetBtnFilter = false;
+
   Map<String, List<String>> arrayFiltersSelected = {
     'games': [],
     'leagues': [],
-    'teams': []
+    'teams': [],
+    'barName': []
   };
 
-  List gameNames = [];
-  List leagueNames = [];
-  List teams = [];
-  bool isLoading = false;
+  List<String> gameNames = [];
+  List<String> leagueNames = [];
+  List<String> teams = [];
+  List<String> barNames = [];
+
+  bool isLoading = true;
   String searchQuery = "";
 
   final Map<String, String> categoryTranslations = {
     'games': 'Jeux',
     'leagues': 'Compétitions',
-    'teams': 'Équipes'
+    'teams': 'Équipes',
+    'barName': 'Nom des bars',
+    'favoris': 'Vos favoris'
   };
 
   @override
-  void initState() {
-    super.initState();
-    _getFilters();
-    _filtersSelectionLoad();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (userRole == null) {
+      final user = ref.read(accountProvider);
+      userRole = user.role;
+      _getFilters();
+      _filtersSelectionLoad();
+    }
   }
 
   Future<void> _getFilters() async {
     String? apiUrl = dotenv.env['API_URL'];
     Dio dio = Dio();
     try {
-      Response response = await dio.get('$apiUrl/commun/filters').timeout(
+      Response response = await dio.get('$apiUrl/filters').timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions:
-                RequestOptions(path: '$apiUrl/commun/filters'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            requestOptions: RequestOptions(path: '$apiUrl/filters'),
+            type: DioExceptionType.connectionTimeout,
             message: 'Timeout',
           );
         },
@@ -61,15 +80,21 @@ class _FilterPageState extends State<FilterPage> {
 
       if (response.statusCode == 200) {
         setState(() {
-          gameNames = response.data['filters']['gameNames'] ?? [];
-          leagueNames = response.data['filters']['leagueNames'] ?? [];
-          teams = response.data['filters']['teamNames'] ?? [];
+          gameNames =
+              List<String>.from(response.data['filters']['gameNames'] ?? []);
+          leagueNames =
+              List<String>.from(response.data['filters']['leagueNames'] ?? []);
+          teams =
+              List<String>.from(response.data['filters']['teamNames'] ?? []);
+          if (userRole == 'client') {
+            barNames =
+                List<String>.from(response.data['filters']['barName'] ?? []);
+          }
           isLoading = false;
         });
       }
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
         handleError(e, context);
       }
     }
@@ -81,7 +106,8 @@ class _FilterPageState extends State<FilterPage> {
       arrayFiltersSelected = {
         'games': prefs.getStringList('games') ?? [],
         'leagues': prefs.getStringList('leagues') ?? [],
-        'teams': prefs.getStringList('teams') ?? []
+        'teams': prefs.getStringList('teams') ?? [],
+        'barName': prefs.getStringList('barName') ?? [],
       };
     });
   }
@@ -96,33 +122,46 @@ class _FilterPageState extends State<FilterPage> {
   void _filtersManageSelect(String category, String item) {
     setState(() {
       List<String> selection = arrayFiltersSelected[category]!;
-      selection.contains(item) ? selection.remove(item) : selection.add(item);
+      if (selection.contains(item)) {
+        selection.remove(item);
+      } else {
+        selection.add(item);
+      }
       _filtersSelectionSave();
     });
   }
 
-  List<dynamic> _filtersManage() {
-    List<dynamic> allItems = [
+  List<Map<String, String>> _filtersManage() {
+    List<Map<String, String>> allItems = [
       ...gameNames.map((item) => {'category': 'games', 'item': item}),
       ...leagueNames.map((item) => {'category': 'leagues', 'item': item}),
       ...teams.map((item) => {'category': 'teams', 'item': item}),
     ];
 
-    List<dynamic> filteredItems = searchQuery.isNotEmpty
-        ? allItems
-            .where((e) => e['item']
-                .toString()
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()))
-            .toList()
-        : allItems.where((e) => e['category'] == boutonSelectionne).toList();
+    if (userRole == 'client') {
+      allItems.addAll(
+        barNames.map((item) => {'category': 'barName', 'item': item}),
+      );
+    }
 
-    List<dynamic> selectedItems = filteredItems
+    List<Map<String, String>> filteredItems;
+
+    if (searchQuery.isNotEmpty) {
+      filteredItems = allItems
+          .where((e) =>
+              e['item']!.toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    } else {
+      filteredItems =
+          allItems.where((e) => e['category'] == selectedButton).toList();
+    }
+
+    List<Map<String, String>> selectedItems = filteredItems
         .where((e) =>
             arrayFiltersSelected[e['category']]?.contains(e['item']) ?? false)
         .toList();
 
-    List<dynamic> unselectedItems = filteredItems
+    List<Map<String, String>> unselectedItems = filteredItems
         .where((e) =>
             !(arrayFiltersSelected[e['category']]?.contains(e['item']) ??
                 false))
@@ -133,123 +172,161 @@ class _FilterPageState extends State<FilterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    List<String> categories = ['games', 'leagues', 'teams'];
+    if (userRole == 'client') {
+      categories.add('barName');
+    }
+    if (userRole == "client" || userRole == "bar") {
+      categories.add('favoris');
+    }
+    bool isArrayFilterNotEmpty =
+        arrayFiltersSelected.values.any((list) => list.isNotEmpty);
+
+    return isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
             children: [
-              const Text('Filtrer vos matchs',
-                  style: TextStyle(
-                      fontSize: 20,
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Filtrer vos matchs',
+                        style: TextStyle(
+                            fontSize: 20,
+                            color: secondaryColor,
+                            fontWeight: FontWeight.w800)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
                       color: secondaryColor,
-                      fontWeight: FontWeight.w800)),
-              IconButton(
-                icon: const Icon(Icons.close),
-                color: secondaryColor,
-                onPressed: () {
-                  widget.getSelectedFilters(arrayFiltersSelected);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            cursorColor: secondaryColor,
-            decoration: InputDecoration(
-              prefixIcon: Icon(Icons.search, color: secondaryColor),
-              hintText: 'Rechercher...',
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-            },
-          ),
-        ),
-        Expanded(
-            child: Padding(
-          padding: EdgeInsets.only(left: 10),
-          child: Row(
-            children: [
-              Column(
-                children: ['games', 'leagues', 'teams'].map((category) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: boutonSelectionne == category
-                            ? secondaryColor
-                            : primaryColor,
-                        foregroundColor: boutonSelectionne == category
-                            ? primaryColor
-                            : secondaryColor,
-                        minimumSize: Size(100, 40),
-                      ),
                       onPressed: () {
-                        setState(() {
-                          boutonSelectionne = category;
-                        });
+                        widget.getSelectedFilters(arrayFiltersSelected);
+                        Navigator.pop(context);
                       },
-                      child: Text(categoryTranslations[category]!),
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  cursorColor: secondaryColor,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: secondaryColor),
+                    hintText: 'Rechercher...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                ),
               ),
               Expanded(
-                child: ListView(
-                  children: _filtersManage().map((e) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: arrayFiltersSelected[e['category']]
-                                        ?.contains(e['item']) ??
-                                    false
-                                ? secondaryColor
-                                : primaryColor,
-                            foregroundColor: arrayFiltersSelected[e['category']]
-                                        ?.contains(e['item']) ??
-                                    false
-                                ? primaryColor
-                                : secondaryColor),
-                        onPressed: () =>
-                            _filtersManageSelect(e['category'], e['item']),
-                        child: Text(e['item']),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 10),
+                  child: Row(
+                    children: [
+                      Column(
+                        children: categories.map((category) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: selectedButton == category
+                                    ? secondaryColor
+                                    : primaryColor,
+                                foregroundColor: selectedButton == category
+                                    ? primaryColor
+                                    : secondaryColor,
+                                minimumSize: const Size(100, 40),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (category == 'favoris') {
+                                    widget.getIsFavorisSelected(true);
+                                    Navigator.pop(context);
+                                  }
+                                  selectedButton = category;
+                                  searchQuery = '';
+                                });
+                              },
+                              child: Text(categoryTranslations[category]!),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }).toList(),
+                      Expanded(
+                        child: ListView(
+                          children: _filtersManage().map((e) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0, horizontal: 8.0),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        arrayFiltersSelected[e['category']]
+                                                    ?.contains(e['item']) ??
+                                                false
+                                            ? secondaryColor
+                                            : primaryColor,
+                                    foregroundColor:
+                                        arrayFiltersSelected[e['category']]
+                                                    ?.contains(e['item']) ??
+                                                false
+                                            ? primaryColor
+                                            : secondaryColor),
+                                onPressed: () => _filtersManageSelect(
+                                    e['category']!, e['item']!),
+                                child: Text(e['item']!),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 25, top: 16),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _resetBtnFilter
+                        ? Colors.grey // Griser le bouton une fois désactivé
+                        : primaryColor,
+                    foregroundColor: secondaryColor,
+                  ),
+                  onPressed: _resetBtnFilter
+                      ? null // Désactiver le bouton si la condition est remplie
+                      : widget.isFavoritesSelected
+                          ? () {
+                              setState(() {
+                                widget.getIsFavorisSelected(false);
+                                _resetBtnFilter =
+                                    true; // Désactiver le bouton après la première action
+                              });
+                            }
+                          : isArrayFilterNotEmpty
+                              ? () {
+                                  setState(() {
+                                    arrayFiltersSelected.forEach((key, value) =>
+                                        arrayFiltersSelected[key] =
+                                            []); // Réinitialiser les filtres
+                                    _filtersSelectionSave();
+                                    _resetBtnFilter =
+                                        true; // Désactiver le bouton après la réinitialisation
+                                  });
+                                }
+                              : null, // Rendre le bouton non cliquable si aucune condition n'est remplie
+                  child: const Text(
+                    'Réinitialiser les filtres',
+                    style: TextStyle(fontSize: 20),
+                  ),
                 ),
               ),
             ],
-          ),
-        )),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 25, top: 16),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor, foregroundColor: secondaryColor),
-            onPressed:
-                arrayFiltersSelected.values.any((list) => list.isNotEmpty)
-                    ? () {
-                        setState(() {
-                          arrayFiltersSelected.forEach(
-                              (key, value) => arrayFiltersSelected[key] = []);
-                          _filtersSelectionSave();
-                        });
-                      }
-                    : null,
-            child: const Text('Réinitialiser les filtres',
-                style: TextStyle(fontSize: 20)),
-          ),
-        ),
-      ],
-    );
+          );
   }
 }

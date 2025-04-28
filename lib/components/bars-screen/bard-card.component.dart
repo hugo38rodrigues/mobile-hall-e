@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.dart';
+import 'package:hall_e_mobile/models/programmationMatch.model.dart';
 import 'package:hall_e_mobile/models/user.models.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';

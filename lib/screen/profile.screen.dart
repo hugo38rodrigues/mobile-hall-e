@@ -5,9 +5,16 @@ import 'package:hall_e_mobile/components/profiles/profile.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool locationDenied = false;
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(accountProvider);
     String role = profile.role;
     // Lire la valeur

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/favoris.model.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
 import 'package:hall_e_mobile/models/location.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.dart';
+import 'package:hall_e_mobile/models/programmationMatch.model.dart';
 import 'package:hall_e_mobile/models/user.models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,7 +39,7 @@ class AccountNotifier extends StateNotifier<User> {
         email: accountUpdate['email'] ?? state.email,
         role: accountUpdate['role'] ?? state.role,
         favorites: accountUpdate.containsKey('favorites')
-            ? Favorites.fromJson(accountUpdate['favorites'])
+            ? Favorites.fromMap(accountUpdate['favorites'], state.favorites)
             : state.favorites,
         informations: accountUpdate.containsKey('informations')
             ? Informations.fromJson(

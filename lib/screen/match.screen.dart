@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../components/calendar.component.dart';
 import '../components/filters.component.dart';
 import '../components/matches/match-list.component.dart';
@@ -13,6 +14,7 @@ class MatchScreen extends StatefulWidget {
 class _MatchScreenState extends State<MatchScreen> {
   DateTime _selectedDate = DateTime.now(); // La vraie date sélectionnée
   Map<String, List<dynamic>> _filtersList = {};
+  bool _isFavoritesSelected = false;
 
   @override
   void initState() {
@@ -28,7 +30,7 @@ class _MatchScreenState extends State<MatchScreen> {
       _filtersList = {
         'games': prefs.getStringList('games') ?? [],
         'leagues': prefs.getStringList('leagues') ?? [],
-        'teams': prefs.getStringList('teams') ?? []
+        'teams': prefs.getStringList('teams') ?? [],
       };
     });
   }
@@ -40,10 +42,16 @@ class _MatchScreenState extends State<MatchScreen> {
     });
   }
 
-  void _getFiltersList(Map<String, List<String>> filterList) {
+  void _getFiltersList(
+      Map<String, List<String>> filterList) {
     setState(() {
-      print(filterList);
       _filtersList = filterList;
+    });
+  }
+
+  void _getIsFavorisSelected(bool isFavoritesSelected) {
+    setState(() {
+      _isFavoritesSelected = isFavoritesSelected;
     });
   }
 
@@ -73,7 +81,7 @@ class _MatchScreenState extends State<MatchScreen> {
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
-              child: FilterPage(getSelectedFilters: _getFiltersList),
+              child: FilterPage(getSelectedFilters: _getFiltersList, getIsFavorisSelected: _getIsFavorisSelected, isFavoritesSelected: _isFavoritesSelected),
             ),
           ),
         );
@@ -104,13 +112,6 @@ class _MatchScreenState extends State<MatchScreen> {
                             .center, // Aligner les icônes verticalement
                         children: [
                           IconButton(
-                            icon: Icon(Icons
-                                .favorite_border_outlined), // Premier bouton iconique
-                            onPressed: () {
-                              // Action du premier bouton
-                            },
-                          ),
-                          IconButton(
                             icon: Icon(Icons.tune), // Deuxième bouton iconique
                             onPressed: () => _showFilterPage(context),
                           ),
@@ -132,6 +133,7 @@ class _MatchScreenState extends State<MatchScreen> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 return MatchList(
+                  isFavoritesSelected: _isFavoritesSelected,
                   filtersList: _filtersList,
                   selectedDate: _selectedDate, // MatchList scrollable
                 );

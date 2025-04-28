@@ -13,24 +13,55 @@ class Favorites {
     required this.barName,
   });
 
-  factory Favorites.fromJson(Map<String, dynamic> json) {
+  factory Favorites.fromMap(Map<String, dynamic> json, Favorites current) {
     return Favorites(
-      gameName: List<String>.from(json['gameName'] ?? []),
-      leagueName: List<String>.from(json['leagueName'] ?? []),
-      teams: (json['teams'] as List<dynamic>?)
-              ?.map((team) => Team.fromMap(team))
-              .toList() ??
-          [],
-      barName: List<String>.from(json['barName'] ?? []), // Ajout de barName
+      gameName: json.containsKey('gameName')
+          ? List<String>.from(json['gameName'])
+          : current.gameName,
+      leagueName: json.containsKey('leagueName')
+          ? List<String>.from(json['leagueName'])
+          : current.leagueName,
+      teams: json.containsKey('teams')
+          ? (json['teams'] as List).map((team) => _mapToTeam(team)).toList()
+          : current.teams,
+      barName: json.containsKey('barName')
+          ? List<String>.from(json['barName'])
+          : current.barName,
     );
+  }
+
+  factory Favorites.fromMapInitial(Map<String, dynamic>? json) {
+    return Favorites(
+      gameName: List<String>.from(json?['gameName'] ?? []),
+      leagueName: List<String>.from(json?['leagueName'] ?? []),
+      teams:
+          (json?['teams'] as List?)?.map((team) => _mapToTeam(team)).toList() ??
+              [],
+      barName: List<String>.from(json?['barName'] ?? []),
+    );
+  }
+
+  static Team _mapToTeam(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      return Team.fromMap(data);
+    } else if (data is String) {
+      return Team(id: data, name: '', acronym: '', logoUrl: '');
+    } else {
+      return Team(id: '', name: '', acronym: '', logoUrl: '');
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'gameName': gameName,
       'leagueName': leagueName,
-      'teams': teams.map((team) => team.toJson()).toList(),
-      'barName': barName, // Ajout à l'objet JSON
+      'teams': teams
+          .map((team) => {
+                'id': team.id,
+                'name': team.name,
+              })
+          .toList(),
+      'barName': barName,
     };
   }
 }
