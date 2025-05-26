@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hall_e_mobile/components/bars-screen/bard-card.component.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
@@ -102,14 +102,14 @@ class _BarListState extends ConsumerState<BarList> {
     List<User> filteredBars = [];
 
     for (final bar in bars) {
-      if (bar.informations is BarInformationsModel) {
-        final barInfo = bar.informations as BarInformationsModel;
+      
+        Informations barInfo = bar.informations!;
 
         final double distance = Geolocator.distanceBetween(
           latitudeUser,
           longitudeUser,
-          barInfo.latitude,
-          barInfo.longitude,
+          barInfo.latitude!,
+          barInfo.longitude!,
         );
 
         final double distanceInKm = distance / 1000;
@@ -117,7 +117,7 @@ class _BarListState extends ConsumerState<BarList> {
         if (distanceInKm <= 100) {
           filteredBars.add(bar);
         }
-      }
+      
     }
 
     return filteredBars;
@@ -132,7 +132,7 @@ class _BarListState extends ConsumerState<BarList> {
         await filterBarsWithinRadius(latitudeUser, longitudeUser, bars);
 
     return barsWithinRadius
-        .where((bar) => bar.programmations.isNotEmpty)
+        .where((bar) => bar.programations!.isNotEmpty)
         .toList();
   }
 
@@ -140,7 +140,7 @@ class _BarListState extends ConsumerState<BarList> {
   Widget build(BuildContext context) {
     final User profile = ref.watch(accountProvider);
 
-    if (!profile.userLocation.isActivated) {
+    if (!profile.userLocation!.isActivated) {
       return Center(
         child: Text(
           "La localisation n'est pas activée.\nVeuillez l'activer pour voir les bars à proximité.",
@@ -160,8 +160,8 @@ class _BarListState extends ConsumerState<BarList> {
         : FutureBuilder<List<User>>(
             future: filterBarsWithActiveProgram(
               bars,
-              profile.userLocation.latitude!,
-              profile.userLocation.longitude!,
+              profile.userLocation!.latitude,
+              profile.userLocation!.longitude,
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {

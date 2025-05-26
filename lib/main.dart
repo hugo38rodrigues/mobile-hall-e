@@ -62,7 +62,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       theme: ThemeData(
         textTheme: textThemes,
       ),
-      home: LandingPage(), // Vérifie l'authentification au démarrage
+      home: LandingPage(), 
     );
   }
 }

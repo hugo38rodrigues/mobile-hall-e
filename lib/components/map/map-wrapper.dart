@@ -6,7 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/programation-match.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
@@ -14,7 +15,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapWrapper extends ConsumerStatefulWidget {
-  final List addressList;
+  final List<ProgramationMatch> addressList;
   const MapWrapper({required this.addressList});
 
   @override
@@ -38,7 +39,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
     User profile = ref.read(accountProvider);
     if (profile.role != 'guest') {
       setState(() {
-        barNameFavorites = profile.favorites.barName;
+        barNameFavorites = profile.favorites!.barName;
         idUser = profile.id;
         isConnected = true;
       });
@@ -151,14 +152,14 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
     User profile = ref.watch(accountProvider);
     bool isNotGuest = profile.role != 'guest';
 
-    return profile.userLocation.isActivated
+    return profile.userLocation!.isActivated
         ? SizedBox(
             width: 350,
             height: 400,
             child: FlutterMap(
               options: MapOptions(
-                initialCenter: LatLng(profile.userLocation.latitude!,
-                    profile.userLocation.longitude!),
+                initialCenter: LatLng(profile.userLocation!.latitude!,
+                    profile.userLocation!.longitude!),
                 initialZoom: 14.5,
                 onTap: (_, __) => _popupController.hideAllPopups(),
               ),
@@ -170,7 +171,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                 MarkerLayer(
                   markers: widget.addressList.map((geo) {
                     return Marker(
-                      point: LatLng(geo['latitude'], geo['longitude']),
+                      point: LatLng(geo.latitude, geo.longitude),
                       width: 40,
                       height: 40,
                       child: GestureDetector(
@@ -178,7 +179,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                           _popupController
                               .hideAllPopups(); // Ferme les autres popups
                           _popupController.togglePopup(Marker(
-                            point: LatLng(geo['latitude'], geo['longitude']),
+                            point: LatLng(geo.latitude, geo.longitude),
                             width: 40,
                             height: 40,
                             child: Icon(Icons.location_pin,
@@ -196,7 +197,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                     popupController: _popupController,
                     markers: widget.addressList.map((geo) {
                       return Marker(
-                        point: LatLng(geo['latitude'], geo['longitude']),
+                        point: LatLng(geo.latitude, geo.longitude),
                         width: 40,
                         height: 40,
                         child: GestureDetector(
@@ -204,7 +205,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                             _popupController
                                 .hideAllPopups(); // Ferme les autres popups
                             _popupController.togglePopup(Marker(
-                              point: LatLng(geo['latitude'], geo['longitude']),
+                              point: LatLng(geo.latitude, geo.longitude),
                               width: 40,
                               height: 40,
                               child: Icon(Icons.location_pin,
@@ -220,12 +221,11 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                       builder: (BuildContext context, Marker marker) {
                         final geo = widget.addressList.firstWhere(
                           (g) =>
-                              g['latitude'] == marker.point.latitude &&
-                              g['longitude'] == marker.point.longitude,
-                          orElse: () => {'name': 'Bar inconnu'},
+                              g.latitude == marker.point.latitude &&
+                              g.longitude == marker.point.longitude,
                         );
                         bool isFavorite =
-                            barNameFavorites.contains(geo['name']);
+                            barNameFavorites.contains(geo.name);
                         return Card(
                           elevation: 5,
                           color: primaryColor,
@@ -237,7 +237,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(geo['name'] ?? 'Bar inconnu',
+                                    Text(geo.name,
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: secondaryColor)),
@@ -247,7 +247,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                                       child: GestureDetector(
                                         onTap: () => {
                                           handleStateBarNameFavorites(
-                                              geo['_id'], geo['name'])
+                                              geo.id, geo.name)
                                         },
                                         child: Icon(
                                           isFavorite
@@ -263,9 +263,9 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                                 ElevatedButton(
                                   onPressed: () {
                                     openMapsWithDirections(
-                                        geo['address'] ?? 'Adresse inconnue',
-                                        profile.userLocation.latitude!,
-                                        profile.userLocation.longitude!);
+                                        geo.address,
+                                        profile.userLocation!.latitude!,
+                                        profile.userLocation!.longitude!);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryColor,
@@ -292,8 +292,8 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: LatLng(profile.userLocation.latitude!,
-                          profile.userLocation.longitude!),
+                      point: LatLng(profile.userLocation!.latitude!,
+                          profile.userLocation!.longitude!),
                       width: 40,
                       height: 40,
                       child:

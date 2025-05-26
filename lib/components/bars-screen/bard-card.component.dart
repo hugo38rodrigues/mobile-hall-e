@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.model.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:latlong2/latlong.dart';
@@ -65,14 +65,13 @@ class _BarCardState extends ConsumerState<BarCard> {
     return '${hours}H${formatedMins ?? mins}';
   }
 
-  List<ProgrammationMatch> filterByDateMatch(
-      List<ProgrammationMatch> programmationMatches) {
-    programmationMatches.sort((a, b) {
+  List<Match> filterByDateMatch(List<Match> programatedMatch) {
+    programatedMatch.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date);
       DateTime dateB = DateTime.parse(b.date);
       return dateA.compareTo(dateB);
     });
-    return programmationMatches;
+    return programatedMatch;
   }
 
   Future<void> openMapsWithDirections(
@@ -98,11 +97,11 @@ class _BarCardState extends ConsumerState<BarCard> {
   @override
   Widget build(BuildContext context) {
     User profile = ref.watch(accountProvider);
-    double? userLatitude = profile.userLocation.latitude;
-    double? userLongitude = profile.userLocation.longitude;
-    BarInformationsModel informations =
-        widget.bar.informations as BarInformationsModel;
-    List<ProgrammationMatch> programmationMatch = widget.bar.programmations;
+    double? userLatitude = profile.userLocation!.latitude;
+    double? userLongitude = profile.userLocation!.longitude;
+    Informations informations =
+        widget.bar.informations!;
+    List<Match> programatedMatch = widget.bar.programations!;
 
     return Card(
       borderOnForeground: true,
@@ -130,7 +129,7 @@ class _BarCardState extends ConsumerState<BarCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      informations.name,
+                      informations.name!,
                       style: TextStyle(
                           fontSize: 15,
                           color: secondaryColor,
@@ -146,7 +145,7 @@ class _BarCardState extends ConsumerState<BarCard> {
                 padding:
                     EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
                 child: Column(
-                  children: filterByDateMatch(programmationMatch)
+                  children: filterByDateMatch(programatedMatch)
                       .map(
                         (prog) => Row(
                           mainAxisAlignment: MainAxisAlignment
@@ -220,14 +219,14 @@ class _BarCardState extends ConsumerState<BarCard> {
             SizedBox(height: 2),
             Container(
               alignment: Alignment(0, 100),
-              child: profile.userLocation.isActivated
+              child: profile.userLocation!.isActivated
                   ? SizedBox(
                       width: 175,
                       height: 30,
                       child: ElevatedButton(
                         onPressed: () {
-                          openMapsWithDirections(
-                              informations.address, userLatitude!, userLongitude!);
+                          openMapsWithDirections(informations.address!,
+                              userLatitude!, userLongitude!);
                         },
                         style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor, elevation: 4),

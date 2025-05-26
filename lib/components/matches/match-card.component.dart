@@ -1,44 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/matches/matchDetailsPage.component.dart';
+import 'package:hall_e_mobile/models/programation-match.model.dart';
+import 'package:hall_e_mobile/models/team.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/intl.dart';
 
-class MatchCard extends StatelessWidget {
+class MatchCard extends ConsumerStatefulWidget {
   final String role;
   final String idMatch;
-  final String team1Id;
-  final String team2Id;
-  final List<dynamic> programmed;
+  final Team team1;
+  final Team team2;
+  final List<ProgramationMatch>? programmed;
   final String leagueName;
   final String gameName;
   final String date;
-  final String team1Acronym;
-  final String? team1Logo;
-  final String team1Name;
-  final String team2Acronym;
-  final String? team2Logo;
-  final String team2Name;
-  final Function sendProgrammationMatch;
+  final Function getIdMatch;
 
   const MatchCard({
     required this.role,
     required this.idMatch,
-    required this.team1Id,
-    required this.team2Id,
+    required this.team1,
+    required this.team2,
     required this.programmed,
     required this.leagueName,
     required this.gameName,
     required this.date,
-    required this.team1Acronym,
-    required this.team1Logo,
-    required this.team1Name,
-    required this.team2Acronym,
-    required this.team2Logo,
-    required this.team2Name,
-    required this.sendProgrammationMatch,
+    required this.getIdMatch,
     Key? key,
   }) : super(key: key);
+  @override
+  _MatchCardState createState() => _MatchCardState();
+}
 
+class _MatchCardState extends ConsumerState<MatchCard> {
   String formatTime(String date) {
     // Forcer le parsing en UTC
     DateTime dateTime = DateTime.parse(date).toLocal();
@@ -48,9 +45,17 @@ class MatchCard extends StatelessWidget {
     return formattedTime;
   }
 
+  bool verifyIcons(List<ProgramationMatch> programedMatch) {
+    User profile = ref.watch(accountProvider);
+
+    return programedMatch
+        .any((match) => match.name == profile.informations!.name);
+  }
+
   @override
   Widget build(BuildContext context) {
-    var hours = formatTime(date);
+    String hours = formatTime(widget.date);
+    // bool isProgramed = verifyIcons(widget.programmed!);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -64,14 +69,12 @@ class MatchCard extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (context) => MatchDetailsPage(
-                          date: date,
-                          gameName: gameName,
-                          leagueName: leagueName,
-                          team1: team1Name,
-                          team2: team2Name,
-                          team1Id: team1Id,
-                          team2Id: team2Id,
-                          barList: programmed,
+                          date: widget.date,
+                          gameName: widget.gameName,
+                          leagueName: widget.leagueName,
+                          team1: widget.team1,
+                          team2: widget.team2,
+                          barList: widget.programmed,
                         )));
           },
           splashColor: secondaryColor,
@@ -117,7 +120,7 @@ class MatchCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              gameName,
+                              widget.gameName,
                               style: TextStyle(
                                   fontSize: 18,
                                   color: secondaryColor,
@@ -152,7 +155,7 @@ class MatchCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                leagueName.toUpperCase(),
+                                widget.leagueName.toUpperCase(),
                                 style: TextStyle(
                                     fontSize: 14,
                                     color: secondaryColor,
@@ -160,15 +163,15 @@ class MatchCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (role == 'bar')
+                            if (widget.role == 'bar')
                               IconButton(
                                   onPressed: () =>
-                                      sendProgrammationMatch(idMatch),
+                                      widget.getIdMatch(widget.idMatch),
                                   color: secondaryColor,
-                                  icon: Icon(programmed.isNotEmpty
+                                  icon: Icon(verifyIcons(widget.programmed!)
                                       ? Icons.close
                                       : Icons.add_circle))
-                            else if (programmed.isNotEmpty)
+                            else if (widget.programmed!.isNotEmpty)
                               Text(
                                 "Match programmé",
                                 style: TextStyle(
@@ -193,9 +196,9 @@ class MatchCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(width: 40),
-                                team1Logo != null
+                                widget.team1.logoUrl.isNotEmpty
                                     ? Image.network(
-                                        team1Logo!,
+                                        widget.team1.logoUrl,
                                         width: 50,
                                         height: 50,
                                         fit: BoxFit.contain,
@@ -204,7 +207,7 @@ class MatchCard extends StatelessWidget {
                                 SizedBox(width: 55),
                                 Expanded(
                                   child: Text(
-                                    team1Name,
+                                    widget.team1.name,
                                     maxLines: 4,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -222,9 +225,9 @@ class MatchCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(width: 40),
-                                team2Logo != null
+                                widget.team2.logoUrl.isNotEmpty
                                     ? Image.network(
-                                        team2Logo!,
+                                        widget.team2.logoUrl,
                                         width: 50,
                                         height: 50,
                                         fit: BoxFit.cover,
@@ -233,7 +236,7 @@ class MatchCard extends StatelessWidget {
                                 SizedBox(width: 55),
                                 Expanded(
                                     child: (Text(
-                                  team2Name,
+                                  widget.team2.name,
                                   maxLines: 4,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

@@ -1,7 +1,7 @@
 class Location {
   bool isActivated;
-  double? latitude;
-  double? longitude;
+  double latitude;
+  double longitude;
 
   Location({
     required this.isActivated,
@@ -12,8 +12,8 @@ class Location {
   factory Location.fromJson(Map<String, dynamic> map) {
     return Location(
       isActivated: map['isActivated'] ?? false,
-      latitude: (map['latitude'] as num?)?.toDouble(),
-      longitude: (map['longitude'] as num?)?.toDouble(),
+      latitude: (map['latitude'] as num).toDouble(),
+      longitude: (map['longitude'] as num).toDouble(),
     );
   }
 

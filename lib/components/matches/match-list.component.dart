@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/favoris.model.dart';
+import 'package:hall_e_mobile/models/match.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
@@ -26,7 +27,7 @@ class MatchList extends ConsumerStatefulWidget {
 }
 
 class _MatchListState extends ConsumerState<MatchList> {
-  List<Map<String, dynamic>> matches = [];
+  List<Match> matches = [];
   bool isLoading = true;
 
   @override
@@ -55,13 +56,49 @@ class _MatchListState extends ConsumerState<MatchList> {
 
       if (response.statusCode == 200) {
         // Extraire la liste des matchs depuis "data"
-        List<Map<String, dynamic>> data =
-            List<Map<String, dynamic>>.from(response.data["data"]);
+        // List<Map<String, Object>> testMatch = [
+        //   {
+        //     "_id": "68022c6c7c134125e6deaabf",
+        //     "idMatch": "1155407",
+        //     "date": "2025-04-30T18:00:00.000Z",
+        //     "numberOfGame": "3",
+        //     "gameName": "League of legends",
+        //     "leagueName": "LPL",
+        //     "team1": {
+        //       "_id": "67b52a8ff0251e15975bc02b",
+        //       "name": "Invictus Gaming",
+        //       "acronym": "IG",
+        //       "logoUrl":
+        //           "https://cdn.pandascore.co/images/team/image/411/invictus_gaminglogo_square.png",
+        //       "__v": 0
+        //     },
+        //     "team2": {
+        //       "_id": "67b52a8ff0251e15975bc022",
+        //       "name": "Weibo Gaming",
+        //       "acronym": "WB",
+        //       "logoUrl":
+        //           "https://cdn.pandascore.co/images/team/image/129972/weibo_gaminglogo_profile.png",
+        //       "__v": 0
+        //     },
+        //     "programmed": [
+        //       {
+        //         "_id": "67f4fbe50be38b2c08d20822",
+        //         "address": "26 rue saint colombe, 33000, Bordeaux",
+        //         "name": "StarFish",
+        //         "latitude": 44.837261,
+        //         "longitude": -0.57082
+        //       }
+        //     ],
+        //   },
+        // ];
         setState(() {
-          matches = data;
+          matches = (response.data as List)
+              .map((match) => Match.fromJson(match))
+              .toList();
           isLoading = false;
         });
       }
+      ;
     } catch (e) {
       if (e is DioException) {
         // Appelle la fonction de gestion des erreurs
@@ -112,9 +149,9 @@ class _MatchListState extends ConsumerState<MatchList> {
   }
 
   /// Filtre les matchs du jour sélectionné
-  bool filterByDate(Map<String, dynamic> match, DateTime targetDate) {
+  bool filterByDate(Match match, DateTime targetDate) {
     // Parse la date du match en local (important si le backend envoie du UTC)
-    DateTime matchDate = DateTime.parse(match["date"]).toLocal();
+    DateTime matchDate = DateTime.parse(match.date).toLocal();
 
     // Définir les bornes du jour sélectionné (00:00 à 23:59:59.999)
     DateTime startOfDay =
@@ -138,53 +175,51 @@ class _MatchListState extends ConsumerState<MatchList> {
   }
 
   /// Filtre par équipes sélectionnées (peut en avoir plusieurs)
-  bool filterByTeams(Map<String, dynamic> match, List<dynamic>? selectedTeams) {
+  bool filterByTeams(Match match, List<dynamic>? selectedTeams) {
     if (selectedTeams == null || selectedTeams.isEmpty) return true;
 
-    bool isTeam1Selected = selectedTeams.contains(match['team1']["name"]);
-    bool isTeam2Selected = selectedTeams.contains(match['team2']["name"]);
+    bool isTeam1Selected = selectedTeams.contains(match.team1.name);
+    bool isTeam2Selected = selectedTeams.contains(match.team2.name);
     return isTeam1Selected || isTeam2Selected;
   }
 
   /// Filtre par jeux sélectionnés (peut en avoir plusieurs)
-  bool filterByGames(Map<String, dynamic> match, List<dynamic>? selectedGames) {
+  bool filterByGames(Match match, List<dynamic>? selectedGames) {
     if (selectedGames == null || selectedGames.isEmpty) return true;
 
-    return selectedGames.contains(match["gameName"]);
+    return selectedGames.contains(match.gameName);
   }
 
   /// Filtre par ligues sélectionnées (peut en avoir plusieurs)
-  bool filterByLeagues(
-      Map<String, dynamic> match, List<dynamic>? selectedLeagues) {
+  bool filterByLeagues(Match match, List<dynamic>? selectedLeagues) {
     if (selectedLeagues == null || selectedLeagues.isEmpty) return true;
 
-    return selectedLeagues.contains(match["leagueName"]);
+    return selectedLeagues.contains(match.leagueName);
   }
 
   /// Filtre par favoris (équipes, ligues ou jeux)
-  bool filterByFavorites(Map<String, dynamic> match, Favorites favoris) {
+  bool filterByFavorites(Match match, Favorites favoris) {
     String role = ref.watch(accountProvider).role;
     bool isFavoriteBarName = false;
 
     List<String> arrayTeams =
         favoris.teams.map<String>((team) => team.name.toString()).toList();
 
-    bool isFavoriteTeam = arrayTeams.contains(match['team1']["name"]) ||
-        arrayTeams.contains(match['team2']['name']);
+    bool isFavoriteTeam = arrayTeams.contains(match.team1.name) ||
+        arrayTeams.contains(match.team2.name);
 
-    bool isFavoriteLeague = favoris.leagueName.contains(match["leagueName"]);
-    
-    bool isFavoriteGame = favoris.gameName.contains(match["gameName"]);
+    bool isFavoriteLeague = favoris.leagueName.contains(match.leagueName);
+
+    bool isFavoriteGame = favoris.gameName.contains(match.gameName);
 
     if (role == 'client') {
-       // Créer une liste des noms de bars programmés
-      List<String> programmedBarNames = match["programmed"]
-          .map<String>((bar) => bar["name"].toString())
-          .toList();
+      // Créer une liste des noms de bars programmés
+      List<String> barNames =
+          match.programmed!.map((programed) => programed.name).toList();
 
-      // Vérifier si l'un des noms dans `favoris.barName` est dans `programmedBarNames`
-      isFavoriteBarName = favoris.barName
-          .any((barName) => programmedBarNames.contains(barName));
+      // Vérifier si l'un des noms dans `favoris.barName` est dans `barNames`
+      isFavoriteBarName =
+          favoris.barName.any((barName) => barNames.contains(barName));
     }
 
     return isFavoriteTeam ||
@@ -194,26 +229,24 @@ class _MatchListState extends ConsumerState<MatchList> {
   }
 
   bool filterByBarName(
-    Map<String, dynamic> match,
+    Match match,
     List<dynamic>? selectedBarName,
   ) {
     if (selectedBarName == null || selectedBarName.isEmpty) return true;
-    if (match["programmed"].isEmpty) {
+    if (match.programmed!.isEmpty) {
       return false;
     }
 
     // On récupère tous les noms de bars qui ont programmé ce match
-    List<String> programmedBarNames = match["programmed"]
-        .map<String>((bar) => bar["name"].toString())
-        .toList();
+    List<String> barNames =
+        match.programmed!.map((programed) => programed.name).toList();
 
     // On vérifie s'il y a au moins un bar programmé dans la sélection
-    return programmedBarNames
-        .any((barName) => selectedBarName.contains(barName));
+    return barNames.any((barName) => selectedBarName.contains(barName));
   }
 
   /// Fonction principale de filtrage
-  List<Map<String, dynamic>> filterMatches(
+  List<Match> filterMatches(
     DateTime targetDate,
     List<dynamic>? selectedTeams,
     List<dynamic>? selectedGames,
@@ -223,7 +256,7 @@ class _MatchListState extends ConsumerState<MatchList> {
     return matches.where((match) {
       if (widget.isFavoritesSelected) {
         // Si favoris sélectionnés, ne filtrer que par les favoris et ignorer les autres filtres
-        return filterByFavorites(match, ref.watch(accountProvider).favorites) &&
+        return filterByFavorites(match, ref.watch(accountProvider).favorites!) &&
             filterByDate(
                 match, targetDate); // Seul le filtre de date s'applique
       } else {
@@ -245,16 +278,12 @@ class _MatchListState extends ConsumerState<MatchList> {
     List? selectedTeams = widget.filtersList['teams'];
     List? selectedBarName = widget.filtersList['barName'];
 
-    List<Map<String, dynamic>> filteredMatches = filterMatches(
-        widget.selectedDate,
-        selectedTeams,
-        selectedGames,
-        selectedLeagues,
-        selectedBarName);
+    List<Match> filteredMatches = filterMatches(widget.selectedDate,
+        selectedTeams, selectedGames, selectedLeagues, selectedBarName);
 
     filteredMatches.sort((a, b) {
-      DateTime dateA = DateTime.parse(a['date']);
-      DateTime dateB = DateTime.parse(b['date']);
+      DateTime dateA = DateTime.parse(a.date);
+      DateTime dateB = DateTime.parse(b.date);
       return dateA.compareTo(dateB);
     });
 
@@ -274,20 +303,14 @@ class _MatchListState extends ConsumerState<MatchList> {
                   (match) {
                     return MatchCard(
                       role: role,
-                      sendProgrammationMatch: sendProgrammationMatch,
-                      programmed: match['programmed'],
-                      leagueName: match['leagueName'],
-                      gameName: match['gameName'],
-                      idMatch: match['_id'],
-                      date: match['date'],
-                      team1Acronym: match['team1']['acronym'],
-                      team1Id: match['team1']['_id'],
-                      team2Id: match['team2']['_id'],
-                      team1Logo: match['team1']['logoUrl'],
-                      team1Name: match['team1']['name'],
-                      team2Acronym: match['team2']['acronym'],
-                      team2Logo: match['team2']['logoUrl'],
-                      team2Name: match['team2']['name'],
+                      getIdMatch: sendProgrammationMatch,
+                      programmed: match.programmed,
+                      leagueName: match.leagueName,
+                      gameName: match.gameName,
+                      idMatch: match.id,
+                      date: match.date,
+                      team1: match.team1,
+                      team2: match.team2,
                     );
                   },
                 ).toList(),

@@ -43,7 +43,7 @@ class Favorites {
 
   static Team _mapToTeam(dynamic data) {
     if (data is Map<String, dynamic>) {
-      return Team.fromMap(data);
+      return Team.fromJson(data);
     } else if (data is String) {
       return Team(id: data, name: '', acronym: '', logoUrl: '');
     } else {
