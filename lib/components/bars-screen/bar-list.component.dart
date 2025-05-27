@@ -49,7 +49,7 @@ class _BarListState extends ConsumerState<BarList> {
       );
 
       if (response.statusCode == 200) {
-        List<User> barList = (response.data['data'] as List)
+        List<User> barList = (response.data as List)
             .map((bar) => User.fromMap(bar))
             .toList();
         if (mounted) {

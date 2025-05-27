@@ -93,10 +93,7 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final isLandscape =
-        MediaQuery.of(context).orientation == Orientation.landscape;
     final double navBarHeight = isTablet ? 90 : 85;
 
     return Scaffold(

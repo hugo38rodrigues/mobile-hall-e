@@ -36,7 +36,7 @@ class Match {
 
    Map<String, dynamic> toJson() {
     return {
-      'firstName': id,
+      'id': id,
       'team1': team1,
       'team2': team2,
       'programmed': programmed,

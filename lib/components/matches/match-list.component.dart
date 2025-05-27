@@ -55,42 +55,6 @@ class _MatchListState extends ConsumerState<MatchList> {
       );
 
       if (response.statusCode == 200) {
-        // Extraire la liste des matchs depuis "data"
-        // List<Map<String, Object>> testMatch = [
-        //   {
-        //     "_id": "68022c6c7c134125e6deaabf",
-        //     "idMatch": "1155407",
-        //     "date": "2025-04-30T18:00:00.000Z",
-        //     "numberOfGame": "3",
-        //     "gameName": "League of legends",
-        //     "leagueName": "LPL",
-        //     "team1": {
-        //       "_id": "67b52a8ff0251e15975bc02b",
-        //       "name": "Invictus Gaming",
-        //       "acronym": "IG",
-        //       "logoUrl":
-        //           "https://cdn.pandascore.co/images/team/image/411/invictus_gaminglogo_square.png",
-        //       "__v": 0
-        //     },
-        //     "team2": {
-        //       "_id": "67b52a8ff0251e15975bc022",
-        //       "name": "Weibo Gaming",
-        //       "acronym": "WB",
-        //       "logoUrl":
-        //           "https://cdn.pandascore.co/images/team/image/129972/weibo_gaminglogo_profile.png",
-        //       "__v": 0
-        //     },
-        //     "programmed": [
-        //       {
-        //         "_id": "67f4fbe50be38b2c08d20822",
-        //         "address": "26 rue saint colombe, 33000, Bordeaux",
-        //         "name": "StarFish",
-        //         "latitude": 44.837261,
-        //         "longitude": -0.57082
-        //       }
-        //     ],
-        //   },
-        // ];
         setState(() {
           matches = (response.data as List)
               .map((match) => Match.fromJson(match))
