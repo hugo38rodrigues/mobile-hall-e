@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/favoris.model.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/location.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.model.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final accountProvider = StateNotifierProvider<AccountNotifier, User>((ref) {
@@ -16,16 +15,7 @@ class AccountNotifier extends StateNotifier<User> {
   AccountNotifier() : super(_guestUser());
 
   static User _guestUser() {
-    return User(
-        id: '',
-        email: '',
-        role: 'guest',
-        informations: ClientInformationsModel(firstName: '', lastName: ''),
-        favorites:
-            Favorites(gameName: [], leagueName: [], teams: [], barName: []),
-        programmations: [],
-        userLocation:
-            Location(isActivated: false, latitude: null, longitude: null));
+    return User(id: '', email: '', role: 'guest', token: '');
   }
 
   void setAccount(User account) {
@@ -37,20 +27,19 @@ class AccountNotifier extends StateNotifier<User> {
     state = User(
         id: accountUpdate['id'] ?? state.id,
         email: accountUpdate['email'] ?? state.email,
+        token: accountUpdate['token'] ?? state.token,
         role: accountUpdate['role'] ?? state.role,
         favorites: accountUpdate.containsKey('favorites')
-            ? Favorites.fromMap(accountUpdate['favorites'], state.favorites)
+            ? Favorites.fromMap(accountUpdate['favorites'], state.favorites!)
             : state.favorites,
         informations: accountUpdate.containsKey('informations')
-            ? Informations.fromJson(
-                accountUpdate['informations'], accountUpdate['role'])
+            ? Informations.fromJson(accountUpdate['informations'])
             : state.informations,
-        programmations: accountUpdate.containsKey('programmations') &&
-                accountUpdate['programmations'] is List
-            ? List<ProgrammationMatch>.from(
-                (accountUpdate['programmations'] as List)
-                    .map((e) => ProgrammationMatch.fromJson(e)))
-            : state.programmations,
+        programations: accountUpdate.containsKey('programations')
+            ? accountUpdate['programation']
+                .map((match) => {Match.fromJson(accountUpdate['programation'])})
+                .toList()
+            : state.programations,
         userLocation: accountUpdate['userLocation'] ?? state.userLocation);
     _saveToPreferences(state);
   }

@@ -35,10 +35,10 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
   Widget fieldsInformation(role) {
     switch (role) {
       case 'client':
-        return ClientInformations(getInformations: getInformations, role: role);
+        return ClientInformations(getInformations: getInformations);
 
       case 'bar':
-      return BarInformations(getInformation: getInformations, role: role);
+      return BarInformations(getInformation: getInformations);
 
       default:
         return Text(

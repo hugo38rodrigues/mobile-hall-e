@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/components/password/forgot-password.component.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
@@ -222,6 +222,7 @@ class _ConnexionState extends ConsumerState<Connexion> {
                                 : secondaryColor)),
                   ]),
                   TextField(
+                    obscureText: true,
                     controller: _passwordController,
                     cursorColor: secondaryColor,
                     decoration: InputDecoration(

@@ -4,7 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/map/map-wrapper.dart';
 import 'package:hall_e_mobile/components/my-app-bar.component.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/programation-match.model.dart';
+import 'package:hall_e_mobile/models/team.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
@@ -14,11 +16,9 @@ class MatchDetailsPage extends ConsumerStatefulWidget {
   final String leagueName;
   final String gameName;
   final String date;
-  final List<dynamic> barList;
-  final String team1;
-  final String team2;
-  final String team1Id;
-  final String team2Id;
+  final List<ProgramationMatch>? barList;
+  final Team team1;
+  final Team team2;
 
   MatchDetailsPage({
     required this.leagueName,
@@ -26,8 +26,6 @@ class MatchDetailsPage extends ConsumerStatefulWidget {
     required this.date,
     required this.team1,
     required this.team2,
-    required this.team1Id,
-    required this.team2Id,
     required this.barList,
   });
   @override
@@ -70,11 +68,11 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
     User profile = ref.read(accountProvider);
     if (profile.role != 'guest') {
       setState(() {
-        gameFavorites = profile.favorites.gameName;
-        leagueFavorites = profile.favorites.leagueName;
+        gameFavorites = profile.favorites!.gameName;
+        leagueFavorites = profile.favorites!.leagueName;
         teamsFavorites =
-            profile.favorites.teams.map((team) => team.name).toList();
-        barNameFavorites = profile.favorites.barName;
+            profile.favorites!.teams.map((team) => team.name).toList();
+        barNameFavorites = profile.favorites!.barName;
         idUser = profile.id;
         isConnected = true;
       });
@@ -340,11 +338,12 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
     bool isFavoriteLeague = leagueFavorites
         .any((leagueInArray) => leagueInArray == widget.leagueName);
     bool isFavoriteTeam1 =
-        teamsFavorites.any((team1InArray) => team1InArray == widget.team1);
+        teamsFavorites.any((team1InArray) => team1InArray == widget.team1.name);
     bool isFavoriteTeam2 =
-        teamsFavorites.any((team2InArray) => team2InArray == widget.team2);
+        teamsFavorites.any((team2InArray) => team2InArray == widget.team2.name);
     String role = ref.watch(accountProvider).role;
     bool isNotGuest = role != 'guest';
+    bool isNotBar = role != 'bar';
 
     return Scaffold(
       appBar: MyAppBar(),
@@ -439,7 +438,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        widget.team1,
+                        widget.team1.name,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: secondaryColor,
@@ -455,7 +454,8 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                       visible: isNotGuest,
                       child: GestureDetector(
                         onTap: () => {
-                          handleStateTeamFavorites(widget.team1, widget.team1Id)
+                          handleStateTeamFavorites(
+                              widget.team1.name, widget.team1.id)
                         },
                         child: Icon(
                           isFavoriteTeam1
@@ -487,7 +487,8 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                       visible: isNotGuest,
                       child: GestureDetector(
                         onTap: () => {
-                          handleStateTeamFavorites(widget.team2, widget.team2Id)
+                          handleStateTeamFavorites(
+                              widget.team2.name, widget.team2.id)
                         },
                         child: Icon(
                           isFavoriteTeam2
@@ -499,7 +500,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                     ),
                     Expanded(
                       child: Text(
-                        widget.team2,
+                        widget.team2.name,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: secondaryColor,
@@ -517,24 +518,28 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
               ),
             ),
             SizedBox(height: 10),
-            widget.barList.isEmpty
-                ? Padding(
-                    padding: EdgeInsets.all(30),
-                    child: Column(
-                      children: [
-                        Text(
-                          "Aucun bar ne programme ce match,",
-                          style: TextStyle(fontSize: 15, color: secondaryColor),
-                        ),
-                        Text(
-                          "n'hésité pas à leurs en parlez",
-                          style: TextStyle(fontSize: 15, color: secondaryColor),
-                        ),
-                      ],
-                    ))
-                : MapWrapper(
-                    addressList: widget.barList,
-                  )
+            isNotBar
+                ? widget.barList!.isEmpty
+                    ? Padding(
+                        padding: EdgeInsets.all(30),
+                        child: Column(
+                          children: [
+                            Text(
+                              "Aucun bar ne programme ce match,",
+                              style: TextStyle(
+                                  fontSize: 15, color: secondaryColor),
+                            ),
+                            Text(
+                              "n'hésité pas à leurs en parlez",
+                              style: TextStyle(
+                                  fontSize: 15, color: secondaryColor),
+                            ),
+                          ],
+                        ))
+                    : MapWrapper(
+                        addressList: widget.barList!,
+                      )
+                : SizedBox()
           ],
         ),
       ),

@@ -33,7 +33,6 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     final status = await locationService.requestAndFetchLocation();
     switch (status) {
       case LocationStatus.success:
-        // OK
         break;
       case LocationStatus.serviceDisabled:
         _showLocationDisabledDialog();
@@ -96,20 +95,32 @@ class _LandingPageState extends ConsumerState<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isTablet = screenSize.shortestSide >= 600;
+
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          // Simule une connexion et redirige vers HomeScreen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomeWrapperScreen()),
           );
         },
         child: Center(
-          child: Text(
-            "Toucher pour voir vos matches",
-            style: TextStyle(color: secondaryColor),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? screenSize.width * 0.2 : 16.0,
+              vertical: isTablet ? screenSize.height * 0.1 : 16.0,
+            ),
+            child: Text(
+              "Toucher pour voir vos matches",
+              style: TextStyle(
+                color: secondaryColor,
+                fontSize: isTablet ? 32 : 20,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),

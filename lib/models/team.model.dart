@@ -11,7 +11,7 @@ class Team {
     required this.logoUrl,
   });
 
-  factory Team.fromMap(Map<String, dynamic> map) {
+  factory Team.fromJson(Map<String, dynamic> map) {
     return Team(
       id: map['_id'] ?? '',
       name: map['name'] ?? '',

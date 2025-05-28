@@ -1,41 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/matches/matchDetailsPage.component.dart';
-import 'package:hall_e_mobile/models/programation-match.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
-import 'package:hall_e_mobile/models/user.model.dart';
-import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/intl.dart';
 
-class MatchCard extends ConsumerStatefulWidget {
-  final String role;
-  final String idMatch;
-  final Team team1;
-  final Team team2;
-  final List<ProgramationMatch>? programmed;
-  final String leagueName;
-  final String gameName;
-  final String date;
-  final Function getIdMatch;
+class ProgrammedMatchCard extends ConsumerStatefulWidget {
+  String idMatch;
+  String leagueName;
+  String gameName;
+  String date;
+  Team team2;
+  Team team1;
+  Function(String idMatch) getIdMatch;
+  ProgrammedMatchCard(
+      {required this.date,
+      required this.gameName,
+      required this.getIdMatch,
+      required this.idMatch,
+      required this.leagueName,
+      required this.team1,
+      required this.team2});
 
-  const MatchCard({
-    required this.role,
-    required this.idMatch,
-    required this.team1,
-    required this.team2,
-    required this.programmed,
-    required this.leagueName,
-    required this.gameName,
-    required this.date,
-    required this.getIdMatch,
-    Key? key,
-  }) : super(key: key);
   @override
-  _MatchCardState createState() => _MatchCardState();
+  _ProgrammedMatchCardState createState() => _ProgrammedMatchCardState();
 }
 
-class _MatchCardState extends ConsumerState<MatchCard> {
+class _ProgrammedMatchCardState extends ConsumerState<ProgrammedMatchCard> {
   String formatTime(String date) {
     // Forcer le parsing en UTC
     DateTime dateTime = DateTime.parse(date).toLocal();
@@ -45,17 +35,9 @@ class _MatchCardState extends ConsumerState<MatchCard> {
     return formattedTime;
   }
 
-  bool checkedMatchIsProgrammedWithBar(List<ProgramationMatch> programedMatch) {
-    User userLogin = ref.watch(accountProvider);
-
-    return programedMatch.any(
-        (programmerBar) => programmerBar.name == userLogin.informations!.name);
-  }
-
   @override
   Widget build(BuildContext context) {
     String hours = formatTime(widget.date);
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Material(
@@ -63,21 +45,6 @@ class _MatchCardState extends ConsumerState<MatchCard> {
         borderRadius: BorderRadius.circular(1),
         child: InkWell(
           borderRadius: BorderRadius.circular(1),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MatchDetailsPage(
-                  date: widget.date,
-                  gameName: widget.gameName,
-                  leagueName: widget.leagueName,
-                  team1: widget.team1,
-                  team2: widget.team2,
-                  barList: widget.programmed ?? [],
-                ),
-              ),
-            );
-          },
           splashColor: secondaryColor,
           highlightColor: Color.fromRGBO(255, 255, 255, 0.1),
           child: AnimatedContainer(
@@ -144,7 +111,7 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                       ),
                     ),
 
-                    // League + "Match programmer"
+                    // League
                     Container(
                       decoration: BoxDecoration(color: primaryColor50),
                       child: Padding(
@@ -164,31 +131,13 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (widget.role == 'bar')
-                              IconButton(
-                                onPressed: (widget.programmed != null &&
-                                        !checkedMatchIsProgrammedWithBar(
-                                            widget.programmed!))
-                                    ? () => widget.getIdMatch(widget.idMatch)
-                                    : null,
-                                color: secondaryColor,
-                                icon: Icon(
-                                  (widget.programmed != null &&
-                                          checkedMatchIsProgrammedWithBar(
-                                              widget.programmed!))
-                                      ? Icons.close
-                                      : Icons.add_circle,
-                                ),
-                              )
-                            else if (widget.programmed != null &&
-                                widget.programmed!.isNotEmpty)
-                              Text(
-                                "Match programmé",
-                                style: TextStyle(
-                                    color: secondaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                              )
+                            IconButton(
+                              onPressed: () async {
+                                widget.getIdMatch(widget.idMatch);
+                              },
+                              icon: Icon(Icons.close),
+                              color: secondaryColor,
+                            )
                           ],
                         ),
                       ),
