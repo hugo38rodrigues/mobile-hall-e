@@ -26,9 +26,9 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
       double screenWidth, bool isTablet) {
     final isSelected = _selectedIndex == index;
 
-    final double iconSize = isTablet ? screenWidth * 0.04 : screenWidth * 0.07;
+    final double iconSize = isTablet ? screenWidth * 0.04 : screenWidth * 0.05;
     final double textSize =
-        isTablet ? screenWidth * 0.025 : screenWidth * 0.035;
+        isTablet ? screenWidth * 0.025 : screenWidth * 0.025;
     final double capsulePaddingH = isTablet ? 12 : 16;
     final double capsulePaddingV = isTablet ? 8 : 6;
 
@@ -94,7 +94,7 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final double navBarHeight = isTablet ? 90 : 85;
+    final double navBarHeight = isTablet ? 90 : 55;
 
     return Scaffold(
       appBar: MyAppBar(),
@@ -155,7 +155,7 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
               child: Container(
                 color: primaryColor,
                 height: navBarHeight,
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 5),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [

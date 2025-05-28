@@ -111,7 +111,7 @@ class _ProgrammedMatchCardState extends ConsumerState<ProgrammedMatchCard> {
                       ),
                     ),
 
-                    // League + "Match programmer"
+                    // League
                     Container(
                       decoration: BoxDecoration(color: primaryColor50),
                       child: Padding(
@@ -132,10 +132,12 @@ class _ProgrammedMatchCardState extends ConsumerState<ProgrammedMatchCard> {
                               ),
                             ),
                             IconButton(
-                                onPressed: () async {
-                                  widget.getIdMatch(widget.idMatch);
-                                },
-                                icon: Icon(Icons.close))
+                              onPressed: () async {
+                                widget.getIdMatch(widget.idMatch);
+                              },
+                              icon: Icon(Icons.close),
+                              color: secondaryColor,
+                            )
                           ],
                         ),
                       ),
