@@ -338,11 +338,12 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
     bool isFavoriteLeague = leagueFavorites
         .any((leagueInArray) => leagueInArray == widget.leagueName);
     bool isFavoriteTeam1 =
-        teamsFavorites.any((team1InArray) => team1InArray == widget.team1);
+        teamsFavorites.any((team1InArray) => team1InArray == widget.team1.name);
     bool isFavoriteTeam2 =
-        teamsFavorites.any((team2InArray) => team2InArray == widget.team2);
+        teamsFavorites.any((team2InArray) => team2InArray == widget.team2.name);
     String role = ref.watch(accountProvider).role;
     bool isNotGuest = role != 'guest';
+    bool isNotBar = role != 'bar';
 
     return Scaffold(
       appBar: MyAppBar(),
@@ -453,7 +454,8 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                       visible: isNotGuest,
                       child: GestureDetector(
                         onTap: () => {
-                          handleStateTeamFavorites(widget.team1.name, widget.team1.id)
+                          handleStateTeamFavorites(
+                              widget.team1.name, widget.team1.id)
                         },
                         child: Icon(
                           isFavoriteTeam1
@@ -485,7 +487,8 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                       visible: isNotGuest,
                       child: GestureDetector(
                         onTap: () => {
-                          handleStateTeamFavorites(widget.team2.name, widget.team2.id)
+                          handleStateTeamFavorites(
+                              widget.team2.name, widget.team2.id)
                         },
                         child: Icon(
                           isFavoriteTeam2
@@ -515,24 +518,28 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
               ),
             ),
             SizedBox(height: 10),
-            widget.barList!.isEmpty
-                ? Padding(
-                    padding: EdgeInsets.all(30),
-                    child: Column(
-                      children: [
-                        Text(
-                          "Aucun bar ne programme ce match,",
-                          style: TextStyle(fontSize: 15, color: secondaryColor),
-                        ),
-                        Text(
-                          "n'hésité pas à leurs en parlez",
-                          style: TextStyle(fontSize: 15, color: secondaryColor),
-                        ),
-                      ],
-                    ))
-                : MapWrapper(
-                    addressList: widget.barList!,
-                  )
+            isNotBar
+                ? widget.barList!.isEmpty
+                    ? Padding(
+                        padding: EdgeInsets.all(30),
+                        child: Column(
+                          children: [
+                            Text(
+                              "Aucun bar ne programme ce match,",
+                              style: TextStyle(
+                                  fontSize: 15, color: secondaryColor),
+                            ),
+                            Text(
+                              "n'hésité pas à leurs en parlez",
+                              style: TextStyle(
+                                  fontSize: 15, color: secondaryColor),
+                            ),
+                          ],
+                        ))
+                    : MapWrapper(
+                        addressList: widget.barList!,
+                      )
+                : SizedBox()
           ],
         ),
       ),
