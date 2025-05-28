@@ -45,17 +45,16 @@ class _MatchCardState extends ConsumerState<MatchCard> {
     return formattedTime;
   }
 
-  bool verifyIcons(List<ProgramationMatch> programedMatch) {
-    User profile = ref.watch(accountProvider);
+  bool checkedMatchIsProgrammedWithBar(List<ProgramationMatch> programedMatch) {
+    User userLogin = ref.watch(accountProvider);
 
-    return programedMatch
-        .any((match) => match.name == profile.informations!.name);
+    return programedMatch.any(
+        (programmerBar) => programmerBar.name == userLogin.informations!.name);
   }
 
   @override
   Widget build(BuildContext context) {
     String hours = formatTime(widget.date);
-    // bool isProgramed = verifyIcons(widget.programmed!);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -66,16 +65,18 @@ class _MatchCardState extends ConsumerState<MatchCard> {
           borderRadius: BorderRadius.circular(1),
           onTap: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => MatchDetailsPage(
-                          date: widget.date,
-                          gameName: widget.gameName,
-                          leagueName: widget.leagueName,
-                          team1: widget.team1,
-                          team2: widget.team2,
-                          barList: widget.programmed,
-                        )));
+              context,
+              MaterialPageRoute(
+                builder: (context) => MatchDetailsPage(
+                  date: widget.date,
+                  gameName: widget.gameName,
+                  leagueName: widget.leagueName,
+                  team1: widget.team1,
+                  team2: widget.team2,
+                  barList: widget.programmed ?? [],
+                ),
+              ),
+            );
           },
           splashColor: secondaryColor,
           highlightColor: Color.fromRGBO(255, 255, 255, 0.1),
@@ -165,13 +166,22 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                             ),
                             if (widget.role == 'bar')
                               IconButton(
-                                  onPressed: () =>
-                                      widget.getIdMatch(widget.idMatch),
-                                  color: secondaryColor,
-                                  icon: Icon(verifyIcons(widget.programmed!)
+                                onPressed: (widget.programmed != null &&
+                                        !checkedMatchIsProgrammedWithBar(
+                                            widget.programmed!))
+                                    ? () => widget.getIdMatch(widget.idMatch)
+                                    : null,
+                                color: secondaryColor,
+                                icon: Icon(
+                                  (widget.programmed != null &&
+                                          checkedMatchIsProgrammedWithBar(
+                                              widget.programmed!))
                                       ? Icons.close
-                                      : Icons.add_circle))
-                            else if (widget.programmed!.isNotEmpty)
+                                      : Icons.add_circle,
+                                ),
+                              )
+                            else if (widget.programmed != null &&
+                                widget.programmed!.isNotEmpty)
                               Text(
                                 "Match programmé",
                                 style: TextStyle(
