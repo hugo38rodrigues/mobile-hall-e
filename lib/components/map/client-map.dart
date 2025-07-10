@@ -11,9 +11,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ClientMap extends ConsumerStatefulWidget {
-  List addressList;
-  List barNameFavorites;
-  Function handleStateBarNameFavorites;
+  final List addressList;
+  final List barNameFavorites;
+  final Function handleStateBarNameFavorites;
 
   ClientMap({
     required this.addressList,
@@ -59,8 +59,8 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
             height: 400,
             child: FlutterMap(
               options: MapOptions(
-                initialCenter: LatLng(profile.userLocation!.latitude!,
-                    profile.userLocation!.longitude!),
+                initialCenter: LatLng(profile.userLocation!.latitude,
+                    profile.userLocation!.longitude),
                 initialZoom: 14.5,
                 onTap: (_, __) => _popupController.hideAllPopups(),
               ),
@@ -165,8 +165,8 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
                                   onPressed: () {
                                     openMapsWithDirections(
                                         geo.address,
-                                        profile.userLocation!.latitude!,
-                                        profile.userLocation!.longitude!);
+                                        profile.userLocation!.latitude,
+                                        profile.userLocation!.longitude);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryColor,
@@ -193,8 +193,8 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: LatLng(profile.userLocation!.latitude!,
-                          profile.userLocation!.longitude!),
+                      point: LatLng(profile.userLocation!.latitude,
+                          profile.userLocation!.longitude),
                       width: 40,
                       height: 40,
                       child:

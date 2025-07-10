@@ -55,10 +55,12 @@ class _ProgramationMatchListState extends ConsumerState<ProgramationMatchList> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => isLoading = false);
       }
     }
   }
@@ -91,10 +93,12 @@ class _ProgramationMatchListState extends ConsumerState<ProgramationMatchList> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => isLoading = false);
       }
     }
   }

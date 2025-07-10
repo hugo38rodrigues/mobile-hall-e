@@ -13,4 +13,6 @@ RegExp regexLowercase = RegExp(r"(?=.*[a-z])");
 RegExp regexStreet = RegExp(r"^\d+\s(?:[a-zA-ZÀ-ÿ]+\.?\s?)+$");
 RegExp regexCity = RegExp(r"^[a-zA-ZÀ-ÿ'’ -]+$");
 RegExp regexNumberOfStreet = RegExp(r'^\d{5}$');
+RegExp regexTwitch = RegExp(r'(twitch)');
+
 

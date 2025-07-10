@@ -14,6 +14,8 @@ class InformationsProfile extends ConsumerWidget {
       shape: Border(),
       borderOnForeground: true,
       child: Column(children: [
+        Informations()
+        Favorites()
         Text('Email: ${profile.email}'),
         Text('Role: ${profile.role}'),
         // Vérification du type pour accéder aux informations client

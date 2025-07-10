@@ -115,11 +115,9 @@ class _ConnexionState extends ConsumerState<Connexion> {
       }
     } catch (e) {
       if (e is DioException) {
-        setState(() {
-          _isLoading = false;
-        });
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }

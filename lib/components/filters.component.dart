@@ -17,8 +17,7 @@ class FilterPage extends ConsumerStatefulWidget {
       {required this.getSelectedFilters,
       required this.getIsFavorisSelected,
       required this.isFavoritesSelected,
-      Key? key})
-      : super(key: key);
+      super.key});
 
   @override
   _FilterPageState createState() => _FilterPageState();
@@ -95,7 +94,12 @@ class _FilterPageState extends ConsumerState<FilterPage> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => isLoading = false);
       }
     }
   }

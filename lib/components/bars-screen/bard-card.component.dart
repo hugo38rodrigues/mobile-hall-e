@@ -226,7 +226,7 @@ class _BarCardState extends ConsumerState<BarCard> {
                       child: ElevatedButton(
                         onPressed: () {
                           openMapsWithDirections(informations.address!,
-                              userLatitude!, userLongitude!);
+                              userLatitude, userLongitude);
                         },
                         style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor, elevation: 4),

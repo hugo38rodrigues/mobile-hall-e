@@ -12,7 +12,7 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   int state = 0;
-  String idUser = '';
+  String? idUser = '';
   String newToken = '';
 
   void getState(int choice) {
@@ -21,7 +21,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     });
   }
 
-  void getIdUser(String id) {
+  void getIdUser(String? id) {
     setState(() {
       idUser = id;
     });

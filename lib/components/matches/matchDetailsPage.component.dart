@@ -49,288 +49,6 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
     getFavorites();
   }
 
-  getHoursAndDays() {
-    DateTime dateTime = DateTime.parse(widget.date).toLocal();
-    String hour = DateFormat("HH'h'mm").format(dateTime);
-    String day = dateTime.day.toString();
-    String month = dateTime.month.toString().length == 1
-        ? "0${dateTime.month.toString()}"
-        : dateTime.month.toString();
-    String year = dateTime.year.toString();
-
-    setState(() {
-      hours = hour;
-      days = "$day/$month/$year";
-    });
-  }
-
-  getFavorites() {
-    User profile = ref.read(accountProvider);
-    if (profile.role != 'guest') {
-      setState(() {
-        gameFavorites = profile.favorites!.gameName;
-        leagueFavorites = profile.favorites!.leagueName;
-        teamsFavorites =
-            profile.favorites!.teams.map((team) => team.name).toList();
-        barNameFavorites = profile.favorites!.barName;
-        idUser = profile.id;
-        isConnected = true;
-      });
-    }
-  }
-
-  addFavoriteGame(gameName) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .post('$apiUrl/favorites/game',
-              data: {"idUser": idUser, "gameName": gameName},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  addFavoriteLeague(leagueName) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .post('$apiUrl/favorites/league',
-              data: {"idUser": idUser, "leagueName": leagueName},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  addFavoriteTeam(idTeam) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .post('$apiUrl/favorites/team',
-              data: {"idUser": idUser, "idTeam": idTeam},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  deleteFavoriteGame(gameName) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .delete('$apiUrl/favorites/game',
-              data: {"idUser": idUser, "gameName": gameName},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  deleteFavoriteLeague(leagueName) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .delete('$apiUrl/favorites/league',
-              data: {"idUser": idUser, "leagueName": leagueName},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  deleteFavoriteTeam(idTeam) async {
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
-
-    try {
-      Response response = await dio
-          .delete('$apiUrl/favorites/team',
-              data: {"idUser": idUser, "idTeam": idTeam},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
-      );
-
-      if (response.statusCode == 200) {
-        ref
-            .read(accountProvider.notifier)
-            .updateAccount({'favorites': response.data});
-        getFavorites();
-      }
-    } catch (e) {
-      if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
-      }
-    }
-  }
-
-  handleStateGameFavorites(gameName) async {
-    bool gameIsPresent = gameFavorites.any((game) => game == gameName);
-    gameIsPresent
-        ? await deleteFavoriteGame(gameName)
-        : await addFavoriteGame(gameName);
-  }
-
-  handleStateLeagueFavorites(leagueName) async {
-    bool leagueIsPresent =
-        leagueFavorites.any((league) => league == leagueName);
-    leagueIsPresent
-        ? await deleteFavoriteLeague(leagueName)
-        : await addFavoriteLeague(leagueName);
-  }
-
-  handleStateTeamFavorites(teamName, teamId) async {
-    bool teamIsPresent = teamsFavorites.any((team) => team == teamName);
-    teamIsPresent
-        ? await deleteFavoriteTeam(teamId)
-        : await addFavoriteTeam(teamId);
-  }
-
   @override
   Widget build(BuildContext context) {
     bool isFavoriteGame =
@@ -544,5 +262,327 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
         ),
       ),
     );
+  }
+
+  getHoursAndDays() {
+    DateTime dateTime = DateTime.parse(widget.date).toLocal();
+    String hour = DateFormat("HH'h'mm").format(dateTime);
+    String day = dateTime.day.toString();
+    String month = dateTime.month.toString().length == 1
+        ? "0${dateTime.month.toString()}"
+        : dateTime.month.toString();
+    String year = dateTime.year.toString();
+
+    setState(() {
+      hours = hour;
+      days = "$day/$month/$year";
+    });
+  }
+
+  getFavorites() {
+    User profile = ref.read(accountProvider);
+    if (profile.role != 'guest') {
+      setState(() {
+        gameFavorites = profile.favorites!.gameName;
+        leagueFavorites = profile.favorites!.leagueName;
+        teamsFavorites =
+            profile.favorites!.teams.map((team) => team.name).toList();
+        barNameFavorites = profile.favorites!.barName;
+        idUser = profile.id;
+        isConnected = true;
+      });
+    }
+  }
+
+  addFavoriteGame(gameName) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/game',
+              data: {
+                "idUser": idUser,
+                "gameName": gameName,
+                "token": profile.token
+              },
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+
+        await handleError(e, context);
+      }
+    }
+  }
+
+  addFavoriteLeague(leagueName) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/league',
+              data: {"idUser": idUser, "leagueName": leagueName},
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+
+        await handleError(e, context);
+      }
+    }
+  }
+
+  addFavoriteTeam(idTeam) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/favorites/team',
+              data: {"idUser": idUser, "idTeam": idTeam},
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+
+        await handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteGame(gameName) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/game',
+              data: {"idUser": idUser, "gameName": gameName},
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+
+        await handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteLeague(leagueName) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/league',
+              data: {
+                "idUser": idUser,
+                "leagueName": leagueName,
+                "token": profile.token
+              },
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+
+        await handleError(e, context);
+      }
+    }
+  }
+
+  deleteFavoriteTeam(idTeam) async {
+    User profile = ref.read(accountProvider);
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+
+    try {
+      Response response = await dio
+          .delete('$apiUrl/favorites/team',
+              data: {
+                "idUser": idUser,
+                "idTeam": idTeam,
+              },
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ref
+            .read(accountProvider.notifier)
+            .updateAccount({'favorites': response.data});
+        getFavorites();
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (!mounted) return;
+        await handleError(e, context);
+      }
+    }
+  }
+
+  handleStateGameFavorites(gameName) async {
+    bool gameIsPresent = gameFavorites.any((game) => game == gameName);
+    gameIsPresent
+        ? await deleteFavoriteGame(gameName)
+        : await addFavoriteGame(gameName);
+  }
+
+  handleStateLeagueFavorites(leagueName) async {
+    bool leagueIsPresent =
+        leagueFavorites.any((league) => league == leagueName);
+    leagueIsPresent
+        ? await deleteFavoriteLeague(leagueName)
+        : await addFavoriteLeague(leagueName);
+  }
+
+  handleStateTeamFavorites(teamName, teamId) async {
+    bool teamIsPresent = teamsFavorites.any((team) => team == teamName);
+    teamIsPresent
+        ? await deleteFavoriteTeam(teamId)
+        : await addFavoriteTeam(teamId);
   }
 }

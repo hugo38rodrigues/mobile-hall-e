@@ -62,11 +62,12 @@ class _MatchListState extends ConsumerState<MatchList> {
           isLoading = false;
         });
       }
-      ;
+      
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -99,8 +100,9 @@ class _MatchListState extends ConsumerState<MatchList> {
       }
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -220,7 +222,8 @@ class _MatchListState extends ConsumerState<MatchList> {
     return matches.where((match) {
       if (widget.isFavoritesSelected) {
         // Si favoris sélectionnés, ne filtrer que par les favoris et ignorer les autres filtres
-        return filterByFavorites(match, ref.watch(accountProvider).favorites!) &&
+        return filterByFavorites(
+                match, ref.watch(accountProvider).favorites!) &&
             filterByDate(
                 match, targetDate); // Seul le filtre de date s'applique
       } else {
@@ -232,6 +235,10 @@ class _MatchListState extends ConsumerState<MatchList> {
             filterByBarName(match, selectedBarName);
       }
     }).toList();
+  }
+
+  hasStreamPlatform(List<String> streamPlatform) {
+    return streamPlatform.length > 1;
   }
 
   @override
@@ -265,8 +272,11 @@ class _MatchListState extends ConsumerState<MatchList> {
             : Column(
                 children: filteredMatches.map(
                   (match) {
+                    print(match);
                     return MatchCard(
                       role: role,
+                      streamPlatform: match.streamPlatform,
+                      hypeScore: match.hypeScore,
                       getIdMatch: sendProgrammationMatch,
                       programmed: match.programmed,
                       leagueName: match.leagueName,

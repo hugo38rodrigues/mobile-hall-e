@@ -30,8 +30,8 @@ class _GetEmailState extends State<GetEmail> {
         _isLoading = true;
       });
 
-      Response response = await request(
-          {'email': email}, '$apiUrl/forgot-password', 'post');
+      Response response =
+          await request({'email': email}, '$apiUrl/forgot-password', 'post');
 
       if (response.statusCode == 200) {
         await Future.delayed(Duration(seconds: 1));
@@ -44,11 +44,9 @@ class _GetEmailState extends State<GetEmail> {
     } catch (e) {
       if (e is DioException) {
         await Future.delayed(Duration(seconds: 1));
-        setState(() {
-          _isLoading = false;
-        });
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }

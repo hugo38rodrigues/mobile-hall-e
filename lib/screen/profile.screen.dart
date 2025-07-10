@@ -17,7 +17,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(accountProvider);
     String role = profile.role;
-    // Lire la valeur
+
     return Scaffold(
       backgroundColor: primaryColor,
       body: SingleChildScrollView(

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hall_e_mobile/components/matches/matchDetailsPage.component.dart';
 import 'package:hall_e_mobile/models/programation-match.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:intl/intl.dart';
 
 class MatchCard extends ConsumerStatefulWidget {
   final String role;
   final String idMatch;
+  final List<String> streamPlatform;
+  final int hypeScore;
   final Team team1;
   final Team team2;
   final List<ProgramationMatch>? programmed;
@@ -21,7 +25,9 @@ class MatchCard extends ConsumerStatefulWidget {
 
   const MatchCard({
     required this.role,
+    required this.hypeScore,
     required this.idMatch,
+    required this.streamPlatform,
     required this.team1,
     required this.team2,
     required this.programmed,
@@ -29,8 +35,8 @@ class MatchCard extends ConsumerStatefulWidget {
     required this.gameName,
     required this.date,
     required this.getIdMatch,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
   @override
   _MatchCardState createState() => _MatchCardState();
 }
@@ -52,9 +58,19 @@ class _MatchCardState extends ConsumerState<MatchCard> {
         (programmerBar) => programmerBar.name == userLogin.informations!.name);
   }
 
+  getStreamName(String streamUrl) {
+    if (regexTwitch.hasMatch(streamUrl)) {
+      String leagueName = streamUrl.split('/')[3];
+      return 'twitch.tv/$leagueName';
+    }
+    List<String> splitUrl = streamUrl.split('/');
+    return 'youtube.com/${splitUrl[3]}/${splitUrl[4]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     String hours = formatTime(widget.date);
+    bool hasStreamPlatform = widget.streamPlatform.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -193,6 +209,44 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                         ),
                       ),
                     ),
+
+                    Container(
+                      decoration: BoxDecoration(color: primaryColor50),
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 12, bottom: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (hasStreamPlatform)
+                              ...widget.streamPlatform.map((streamUrl) =>
+                                  Padding(
+                                    padding: EdgeInsetsGeometry.only(left: 10),
+                                    child: Text(
+                                      getStreamName(streamUrl),
+                                      style: TextStyle(color: secondaryColor),
+                                    ),
+                                  )),
+                            if (!hasStreamPlatform)
+                              Padding(
+                                padding: EdgeInsetsGeometry.only(left: 10),
+                                child: Text(
+                                  "Match pas diffusé",
+                                  style: TextStyle(color: secondaryColor),
+                                ),
+                              ),
+                            Row(
+                              children: List.generate(
+                                widget.hypeScore.clamp(0, 3),
+                                (index) => Icon(
+                                  FontAwesomeIcons.fire,
+                                  color: secondaryColor,
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
                     SizedBox(height: 12),
 
                     // Bloc des équipes centré
@@ -213,7 +267,8 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                                         height: 50,
                                         fit: BoxFit.contain,
                                       )
-                                    : Icon(Icons.add, size: 50),
+                                    : Icon(FontAwesomeIcons.notdef,
+                                        color: secondaryColor, size: 45),
                                 SizedBox(width: 55),
                                 Expanded(
                                   child: Text(
@@ -242,7 +297,8 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                                         height: 50,
                                         fit: BoxFit.cover,
                                       )
-                                    : Icon(Icons.add, size: 50),
+                                    : Icon(FontAwesomeIcons.notdef,
+                                        size: 45, color: secondaryColor),
                                 SizedBox(width: 55),
                                 Expanded(
                                     child: (Text(

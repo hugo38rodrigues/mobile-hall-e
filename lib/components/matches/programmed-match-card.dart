@@ -5,13 +5,13 @@ import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:intl/intl.dart';
 
 class ProgrammedMatchCard extends ConsumerStatefulWidget {
-  String idMatch;
-  String leagueName;
-  String gameName;
-  String date;
-  Team team2;
-  Team team1;
-  Function(String idMatch) getIdMatch;
+  final String idMatch;
+  final String leagueName;
+  final String gameName;
+  final String date;
+  final Team team2;
+  final Team team1;
+  final Function(String idMatch) getIdMatch;
   ProgrammedMatchCard(
       {required this.date,
       required this.gameName,

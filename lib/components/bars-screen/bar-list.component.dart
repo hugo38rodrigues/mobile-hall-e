@@ -49,9 +49,8 @@ class _BarListState extends ConsumerState<BarList> {
       );
 
       if (response.statusCode == 200) {
-        List<User> barList = (response.data as List)
-            .map((bar) => User.fromMap(bar))
-            .toList();
+        List<User> barList =
+            (response.data as List).map((bar) => User.fromMap(bar)).toList();
         if (mounted) {
           setState(() {
             bars = barList;
@@ -61,10 +60,12 @@ class _BarListState extends ConsumerState<BarList> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => isLoading = false);
       }
     }
   }
@@ -102,22 +103,20 @@ class _BarListState extends ConsumerState<BarList> {
     List<User> filteredBars = [];
 
     for (final bar in bars) {
-      
-        Informations barInfo = bar.informations!;
+      Informations barInfo = bar.informations!;
 
-        final double distance = Geolocator.distanceBetween(
-          latitudeUser,
-          longitudeUser,
-          barInfo.latitude!,
-          barInfo.longitude!,
-        );
+      final double distance = Geolocator.distanceBetween(
+        latitudeUser,
+        longitudeUser,
+        barInfo.latitude!,
+        barInfo.longitude!,
+      );
 
-        final double distanceInKm = distance / 1000;
+      final double distanceInKm = distance / 1000;
 
-        if (distanceInKm <= 100) {
-          filteredBars.add(bar);
-        }
-      
+      if (distanceInKm <= 100) {
+        filteredBars.add(bar);
+      }
     }
 
     return filteredBars;

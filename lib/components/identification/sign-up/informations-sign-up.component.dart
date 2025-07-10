@@ -83,8 +83,8 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
       }
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+        await handleError(e, context);
       }
     }
   }

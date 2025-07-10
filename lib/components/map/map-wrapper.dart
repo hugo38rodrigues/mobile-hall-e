@@ -102,8 +102,9 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
       }
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -138,7 +139,9 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -148,7 +151,7 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
     User profile = ref.watch(accountProvider);
     bool isNotBar = profile.role != "bar";
 
-    return isNotBar  
+    return isNotBar
         ? ClientMap(
             barNameFavorites: barNameFavorites,
             handleStateBarNameFavorites: handleStateBarNameFavorites,
