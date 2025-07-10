@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/profiles/informations-profile.component.dart';
 import 'package:hall_e_mobile/models/location-services.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
 
-class Profile extends ConsumerStatefulWidget {
+import 'home-wrapper.screen.dart';
+
+class LandingPage extends ConsumerStatefulWidget {
+  const LandingPage({super.key});
+
   @override
-  _ProfileState createState() => _ProfileState();
+  ConsumerState<LandingPage> createState() => _LandingPageState();
 }
 
-class _ProfileState extends ConsumerState<Profile> {
+class _LandingPageState extends ConsumerState<LandingPage> {
   bool locationDenied = false;
 
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      location();
+      String role = ref.watch(accountProvider).role;
+      if (role != 'bar') {
+        location();
+      }
     });
   }
 
@@ -25,7 +33,6 @@ class _ProfileState extends ConsumerState<Profile> {
     final status = await locationService.requestAndFetchLocation();
     switch (status) {
       case LocationStatus.success:
-        // OK
         break;
       case LocationStatus.serviceDisabled:
         _showLocationDisabledDialog();
@@ -86,21 +93,37 @@ class _ProfileState extends ConsumerState<Profile> {
     );
   }
 
-  final List<String> items =
-      List.generate(1, (index) => "Élément ${index + 1}");
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-        child: Column(children: [
-      InformationsProfile(),
-      ElevatedButton(
-        onPressed: () async {
-          // Déconnecter l'utilisateur
-          await ref.read(accountProvider.notifier).clearAccount();
+    final screenSize = MediaQuery.of(context).size;
+    final isTablet = screenSize.shortestSide >= 600;
+
+    return Scaffold(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeWrapperScreen()),
+          );
         },
-        child: Text('Se déconnecter'),
-      )
-    ]));
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? screenSize.width * 0.2 : 16.0,
+              vertical: isTablet ? screenSize.height * 0.1 : 16.0,
+            ),
+            child: Text(
+              "Toucher pour voir vos matches",
+              style: TextStyle(
+                color: secondaryColor,
+                fontSize: isTablet ? 32 : 20,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -31,7 +31,7 @@ class _GetEmailState extends State<GetEmail> {
       });
 
       Response response = await request(
-          {'email': email}, '$apiUrl/commun/forgot-password', 'post');
+          {'email': email}, '$apiUrl/forgot-password', 'post');
 
       if (response.statusCode == 200) {
         await Future.delayed(Duration(seconds: 1));

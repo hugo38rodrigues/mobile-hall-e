@@ -44,7 +44,6 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
-    print(newCredentiels);
     return Column(
       children: [
         signUpStep(state),

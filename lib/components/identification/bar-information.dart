@@ -8,9 +8,8 @@ import 'package:image_picker/image_picker.dart';
 
 class BarInformations extends StatefulWidget {
   final Function getInformation;
-  final String role;
 
-  BarInformations({required this.getInformation, required this.role});
+  BarInformations({required this.getInformation});
 
   @override
   _BarInformationsState createState() => _BarInformationsState();
@@ -42,7 +41,7 @@ class _BarInformationsState extends State<BarInformations> {
       'name': nameController.text,
       'description': descriptionController.text,
       'address': address
-    }, widget.role);
+    });
     widget.getInformation(informations);
   }
 

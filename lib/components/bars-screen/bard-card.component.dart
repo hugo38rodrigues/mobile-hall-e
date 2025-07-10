@@ -1,19 +1,33 @@
-import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/programmationMatch.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'dart:io';
 
-class BarCard extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/models/information.model.dart';
+import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class BarCard extends ConsumerStatefulWidget {
   final User bar;
-  BarCard({required this.bar});
+  const BarCard({required this.bar});
 
   @override
-  _BardCardState createState() => _BardCardState();
+  ConsumerState<BarCard> createState() => _BarCardState();
 }
 
-class _BardCardState extends State<BarCard> {
-  
+class _BarCardState extends ConsumerState<BarCard> {
+  LatLng? userPosition;
+  bool locationDenied = false;
+  bool isIos = Platform.isIOS;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   String getDate(String date) {
     DateTime dateTime = DateTime.parse(date).toLocal();
     int month = dateTime.month;
@@ -51,21 +65,43 @@ class _BardCardState extends State<BarCard> {
     return '${hours}H${formatedMins ?? mins}';
   }
 
-  List<ProgrammationMatch> filterByDateMatch(
-      List<ProgrammationMatch> programmationMatches) {
-    programmationMatches.sort((a, b) {
+  List<Match> filterByDateMatch(List<Match> programatedMatch) {
+    programatedMatch.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date);
       DateTime dateB = DateTime.parse(b.date);
       return dateA.compareTo(dateB);
     });
-    return programmationMatches;
+    return programatedMatch;
+  }
+
+  Future<void> openMapsWithDirections(
+      String destinationAddress, double latitude, double longitude) async {
+    try {
+      final Uri googleMapsUri = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&origin=$latitude,$longitude&destination=${Uri.encodeComponent(destinationAddress)}',
+      );
+      final Uri appleMapsUri = Uri.parse(
+        'maps://?saddr=$latitude,$longitude&daddr=${Uri.encodeComponent(destinationAddress)}',
+      );
+
+      if (isIos && await canLaunchUrl(appleMapsUri)) {
+        await launchUrl(appleMapsUri);
+      } else {
+        await launchUrl(googleMapsUri);
+      }
+    } catch (e) {
+      print("Erreur lors de l'ouverture de Maps: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    BarInformationsModel informations =
-        widget.bar.informations as BarInformationsModel;
-    List<ProgrammationMatch> programmationMatch = widget.bar.programmations;
+    User profile = ref.watch(accountProvider);
+    double? userLatitude = profile.userLocation!.latitude;
+    double? userLongitude = profile.userLocation!.longitude;
+    Informations informations =
+        widget.bar.informations!;
+    List<Match> programatedMatch = widget.bar.programations!;
 
     return Card(
       borderOnForeground: true,
@@ -93,7 +129,7 @@ class _BardCardState extends State<BarCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      informations.name,
+                      informations.name!,
                       style: TextStyle(
                           fontSize: 15,
                           color: secondaryColor,
@@ -109,7 +145,7 @@ class _BardCardState extends State<BarCard> {
                 padding:
                     EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
                 child: Column(
-                  children: filterByDateMatch(programmationMatch)
+                  children: filterByDateMatch(programatedMatch)
                       .map(
                         (prog) => Row(
                           mainAxisAlignment: MainAxisAlignment
@@ -130,9 +166,7 @@ class _BardCardState extends State<BarCard> {
                             Image(
                               width: 30,
                               height: 30,
-                              image: AssetImage(getGame(prog.gameName)
-                              
-                            ),
+                              image: AssetImage(getGame(prog.gameName)),
                             ),
                             Expanded(
                               child: Row(
@@ -184,35 +218,59 @@ class _BardCardState extends State<BarCard> {
             ),
             SizedBox(height: 2),
             Container(
-                alignment: Alignment(0, 100),
-                child: SizedBox(
-                  width: 175,
-                  height: 30,
-                  child: ElevatedButton(
-                    onPressed: () => {},
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor, elevation: 4),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Trouver le bar',
-                          style: TextStyle(
+              alignment: Alignment(0, 100),
+              child: profile.userLocation!.isActivated
+                  ? SizedBox(
+                      width: 175,
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          openMapsWithDirections(informations.address!,
+                              userLatitude!, userLongitude!);
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor, elevation: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Trouver le bar",
+                              style: TextStyle(
+                                  color: secondaryColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_circle_right_outlined,
+                              size: 24,
                               color: secondaryColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold),
+                            )
+                          ],
                         ),
-                        SizedBox(
-                          width: 4,
+                      ),
+                    )
+                  : SizedBox(
+                      width: 210,
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor, elevation: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Activer la localisation",
+                              style: TextStyle(
+                                  color: secondaryColor,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                        Icon(
-                          Icons.arrow_circle_right_outlined,
-                          size: 24,
-                          color: secondaryColor,
-                        )
-                      ],
+                      ),
                     ),
-                  ),
-                ))
+            )
           ],
         ),
       ),

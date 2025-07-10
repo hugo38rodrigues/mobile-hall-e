@@ -1,6 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/models/favoris.model.dart';
+import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
@@ -8,19 +12,22 @@ import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import '../loader.component.dart';
 import 'match-card.component.dart';
 
-class MatchList extends StatefulWidget {
+class MatchList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
   final Map<String, List<dynamic>> filtersList;
-  // final List<String> favoriteList;
+  final bool isFavoritesSelected;
 
-  MatchList({required this.selectedDate, required this.filtersList});
+  MatchList(
+      {required this.selectedDate,
+      required this.filtersList,
+      required this.isFavoritesSelected});
 
   @override
   _MatchListState createState() => _MatchListState();
 }
 
-class _MatchListState extends State<MatchList> {
-  List<Map<String, dynamic>> matches = [];
+class _MatchListState extends ConsumerState<MatchList> {
+  List<Match> matches = [];
   bool isLoading = true;
 
   @override
@@ -34,12 +41,49 @@ class _MatchListState extends State<MatchList> {
     Dio dio = Dio();
 
     try {
-      Response response = await dio.get('$apiUrl/commun').timeout(
+      Response response = await dio.get('$apiUrl/').timeout(
         Duration(seconds: 10),
         onTimeout: () {
           // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/commun'),
+            requestOptions: RequestOptions(path: '$apiUrl/'),
+            type: DioExceptionType
+                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            message: 'Timeout',
+          );
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          matches = (response.data as List)
+              .map((match) => Match.fromJson(match))
+              .toList();
+          isLoading = false;
+        });
+      }
+      ;
+    } catch (e) {
+      if (e is DioException) {
+        // Appelle la fonction de gestion des erreurs
+        handleError(e, context);
+      }
+    }
+  }
+
+  Future<void> sendProgrammationMatch(matchId) async {
+    String? apiUrl = dotenv.env['API_URL'];
+    Dio dio = Dio();
+    String id = ref.watch(accountProvider).id;
+
+    try {
+      Response response = await dio
+          .post('$apiUrl/bar', data: {"matchId": matchId, "barId": id}).timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          // Gère le timeout en lançant une exception
+          throw DioException(
+            requestOptions: RequestOptions(path: '$apiUrl/bar'),
             type: DioExceptionType
                 .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
             message: 'Timeout',
@@ -49,11 +93,8 @@ class _MatchListState extends State<MatchList> {
 
       if (response.statusCode == 200) {
         // Extraire la liste des matchs depuis "data"
-        List<Map<String, dynamic>> data =
-            List<Map<String, dynamic>>.from(response.data["data"]);
         setState(() {
-          matches = data;
-          isLoading = false;
+          fetchMatches();
         });
       }
     } catch (e) {
@@ -61,19 +102,6 @@ class _MatchListState extends State<MatchList> {
         // Appelle la fonction de gestion des erreurs
         handleError(e, context);
       }
-    }
-  }
-
-  /// Vérifie le nombre de manches (Bo) et retourne un ajustement d'heure
-  int filterMatchByBo(Map<String, dynamic> match) {
-    String numberOfGames = match["numberOfGame"];
-
-    if (numberOfGames == '1') {
-      return 1;
-    } else if (numberOfGames == '3') {
-      return 3;
-    } else {
-      return 4;
     }
   }
 
@@ -85,88 +113,141 @@ class _MatchListState extends State<MatchList> {
   }
 
   /// Filtre les matchs du jour sélectionné
-  bool filterByDate(Map<String, dynamic> match, DateTime targetDate) {
-    DateTime matchDate = DateTime.parse(match["date"]);
+  bool filterByDate(Match match, DateTime targetDate) {
+    // Parse la date du match en local (important si le backend envoie du UTC)
+    DateTime matchDate = DateTime.parse(match.date).toLocal();
 
-    // Si c'est aujourd'hui, appliquer filterMatchByBo
-    if (isSameDay(matchDate, DateTime.now())) {
-      int adjustedHour = matchDate.hour + filterMatchByBo(match);
-      if (adjustedHour <= DateTime.now().hour) {
-        return false;
-      }
+    // Définir les bornes du jour sélectionné (00:00 à 23:59:59.999)
+    DateTime startOfDay =
+        DateTime(targetDate.year, targetDate.month, targetDate.day);
+    DateTime endOfDay =
+        startOfDay.add(Duration(days: 1)).subtract(Duration(milliseconds: 1));
+
+    // Ne garder que les matchs compris dans cette journée
+    bool isInSelectedDay =
+        matchDate.isAfter(startOfDay) && matchDate.isBefore(endOfDay);
+
+    if (!isInSelectedDay) return false;
+
+    // Si on est sur aujourd’hui, on exclut les matchs déjà passés dans la journée
+    DateTime now = DateTime.now();
+    if (isSameDay(targetDate, now)) {
+      return matchDate.isAfter(now);
     }
 
-    return isSameDay(matchDate, targetDate);
+    return true;
   }
 
   /// Filtre par équipes sélectionnées (peut en avoir plusieurs)
-  bool filterByTeams(Map<String, dynamic> match, List<dynamic>? selectedTeams) {
+  bool filterByTeams(Match match, List<dynamic>? selectedTeams) {
     if (selectedTeams == null || selectedTeams.isEmpty) return true;
 
-    bool isTeam1Selected = selectedTeams.contains(match['team1']["name"]);
-    bool isTeam2Selected = selectedTeams.contains(match['team2']["name"]);
+    bool isTeam1Selected = selectedTeams.contains(match.team1.name);
+    bool isTeam2Selected = selectedTeams.contains(match.team2.name);
     return isTeam1Selected || isTeam2Selected;
   }
 
   /// Filtre par jeux sélectionnés (peut en avoir plusieurs)
-  bool filterByGames(Map<String, dynamic> match, List<dynamic>? selectedGames) {
+  bool filterByGames(Match match, List<dynamic>? selectedGames) {
     if (selectedGames == null || selectedGames.isEmpty) return true;
 
-    return selectedGames.contains(match["gameName"]);
+    return selectedGames.contains(match.gameName);
   }
 
   /// Filtre par ligues sélectionnées (peut en avoir plusieurs)
-  bool filterByLeagues(
-      Map<String, dynamic> match, List<dynamic>? selectedLeagues) {
+  bool filterByLeagues(Match match, List<dynamic>? selectedLeagues) {
     if (selectedLeagues == null || selectedLeagues.isEmpty) return true;
 
-    return selectedLeagues.contains(match["leagueName"]);
+    return selectedLeagues.contains(match.leagueName);
   }
 
   /// Filtre par favoris (équipes, ligues ou jeux)
-  bool filterByFavorites(Map<String, dynamic> match,
-      List<String>? favoriteNames, bool isFavoritesActive) {
-    // Le filtre favoris ne s'active que si le bouton est sélectionné
-    if (!isFavoritesActive) return true;
+  bool filterByFavorites(Match match, Favorites favoris) {
+    String role = ref.watch(accountProvider).role;
+    bool isFavoriteBarName = false;
 
-    bool isFavoriteTeam = favoriteNames?.contains(match['team1']["name"]) ??
-        false || favoriteNames!.contains(match["team2"]["name"]);
-    bool isFavoriteLeague =
-        favoriteNames?.contains(match["leagueName"]) ?? false;
-    bool isFavoriteGame = favoriteNames?.contains(match["gameName"]) ?? false;
+    List<String> arrayTeams =
+        favoris.teams.map<String>((team) => team.name.toString()).toList();
 
-    return isFavoriteTeam || isFavoriteLeague || isFavoriteGame;
+    bool isFavoriteTeam = arrayTeams.contains(match.team1.name) ||
+        arrayTeams.contains(match.team2.name);
+
+    bool isFavoriteLeague = favoris.leagueName.contains(match.leagueName);
+
+    bool isFavoriteGame = favoris.gameName.contains(match.gameName);
+
+    if (role == 'client') {
+      // Créer une liste des noms de bars programmés
+      List<String> barNames =
+          match.programmed!.map((programed) => programed.name).toList();
+
+      // Vérifier si l'un des noms dans `favoris.barName` est dans `barNames`
+      isFavoriteBarName =
+          favoris.barName.any((barName) => barNames.contains(barName));
+    }
+
+    return isFavoriteTeam ||
+        isFavoriteLeague ||
+        isFavoriteGame ||
+        isFavoriteBarName;
+  }
+
+  bool filterByBarName(
+    Match match,
+    List<dynamic>? selectedBarName,
+  ) {
+    if (selectedBarName == null || selectedBarName.isEmpty) return true;
+    if (match.programmed!.isEmpty) {
+      return false;
+    }
+
+    // On récupère tous les noms de bars qui ont programmé ce match
+    List<String> barNames =
+        match.programmed!.map((programed) => programed.name).toList();
+
+    // On vérifie s'il y a au moins un bar programmé dans la sélection
+    return barNames.any((barName) => selectedBarName.contains(barName));
   }
 
   /// Fonction principale de filtrage
-  List<Map<String, dynamic>> filterMatchesByDay(
+  List<Match> filterMatches(
     DateTime targetDate,
     List<dynamic>? selectedTeams,
     List<dynamic>? selectedGames,
     List<dynamic>? selectedLeagues,
-    // List<String>? favoriteNames,
-    // {bool isFavoritesActive = false}
+    List<dynamic>? selectedBarName,
   ) {
     return matches.where((match) {
-      return filterByDate(match, targetDate) &&
-          (filterByTeams(match, selectedTeams) &&
-              filterByGames(match, selectedGames) &&
-              filterByLeagues(match, selectedLeagues)); //&&
-      // filterByFavorites(match, favoriteNames, isFavoritesActive);
+      if (widget.isFavoritesSelected) {
+        // Si favoris sélectionnés, ne filtrer que par les favoris et ignorer les autres filtres
+        return filterByFavorites(match, ref.watch(accountProvider).favorites!) &&
+            filterByDate(
+                match, targetDate); // Seul le filtre de date s'applique
+      } else {
+        // Applique tous les filtres quand favoris n'est pas activé
+        return filterByDate(match, targetDate) &&
+            filterByTeams(match, selectedTeams) &&
+            filterByGames(match, selectedGames) &&
+            filterByLeagues(match, selectedLeagues) &&
+            filterByBarName(match, selectedBarName);
+      }
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    String role = ref.watch(accountProvider).role;
     List? selectedGames = widget.filtersList['games'];
     List? selectedLeagues = widget.filtersList['leagues'];
     List? selectedTeams = widget.filtersList['teams'];
-    List<Map<String, dynamic>> filteredMatches = filterMatchesByDay(
-        widget.selectedDate, selectedTeams, selectedGames, selectedLeagues);
+    List? selectedBarName = widget.filtersList['barName'];
+
+    List<Match> filteredMatches = filterMatches(widget.selectedDate,
+        selectedTeams, selectedGames, selectedLeagues, selectedBarName);
 
     filteredMatches.sort((a, b) {
-      DateTime dateA = DateTime.parse(a['date']);
-      DateTime dateB = DateTime.parse(b['date']);
+      DateTime dateA = DateTime.parse(a.date);
+      DateTime dateB = DateTime.parse(b.date);
       return dateA.compareTo(dateB);
     });
 
@@ -182,21 +263,21 @@ class _MatchListState extends State<MatchList> {
                 ),
               )
             : Column(
-                children: filteredMatches.map((match) {
-                  return MatchCard(
-                    programmed: match['programmed'],
-                    leagueName: match['leagueName'],
-                    gameName: match['gameName'],
-                    idMatch: match['idMatch'],
-                    date: match['date'],
-                    team1Acronym: match['team1']['acronym'],
-                    team1Logo: match['team1']['logoUrl'],
-                    team1Name: match['team1']['name'],
-                    team2Acronym: match['team2']['acronym'],
-                    team2Logo: match['team2']['logoUrl'],
-                    team2Name: match['team2']['name'],
-                  );
-                }).toList(),
+                children: filteredMatches.map(
+                  (match) {
+                    return MatchCard(
+                      role: role,
+                      getIdMatch: sendProgrammationMatch,
+                      programmed: match.programmed,
+                      leagueName: match.leagueName,
+                      gameName: match.gameName,
+                      idMatch: match.id,
+                      date: match.date,
+                      team1: match.team1,
+                      team2: match.team2,
+                    );
+                  },
+                ).toList(),
               );
   }
 }

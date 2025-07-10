@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 
 class ClientInformations extends StatefulWidget {
   final Function(Informations) getInformations;
-  final String role;
-  ClientInformations({required this.getInformations, required this.role});
+  ClientInformations({required this.getInformations});
   @override
   _ClientInformationsState createState() => _ClientInformationsState();
 }
@@ -19,7 +18,7 @@ class _ClientInformationsState extends State<ClientInformations> {
     Informations informations = Informations.fromJson({
       'lastName': lastNameController.text,
       'firstName': firstNameController.text
-    }, widget.role);
+    });
     widget.getInformations(informations);
   }
 

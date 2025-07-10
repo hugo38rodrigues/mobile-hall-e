@@ -5,13 +5,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/components/password/forgot-password.component.dart';
-import 'package:hall_e_mobile/models/user.models.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
-class Connexion extends StatefulWidget {
+class Connexion extends ConsumerStatefulWidget {
   final Function getStateProfile;
   Connexion({required this.getStateProfile});
 
@@ -19,7 +19,7 @@ class Connexion extends StatefulWidget {
   _ConnexionState createState() => _ConnexionState();
 }
 
-class _ConnexionState extends State<Connexion> {
+class _ConnexionState extends ConsumerState<Connexion> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -87,7 +87,7 @@ class _ConnexionState extends State<Connexion> {
 
     try {
       Response response = await dio
-          .post('$apiUrl/commun/connexion',
+          .post('$apiUrl/connexion',
               data: {"email": email, "password": password},
               options: Options(
                 headers: {"Content-Type": "application/json"},
@@ -98,7 +98,7 @@ class _ConnexionState extends State<Connexion> {
           _isLoading = false;
           // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/commun/connexion'),
+            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
             type: DioExceptionType
                 .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
             message: 'Timeout',
@@ -222,6 +222,7 @@ class _ConnexionState extends State<Connexion> {
                                 : secondaryColor)),
                   ]),
                   TextField(
+                    obscureText: true,
                     controller: _passwordController,
                     cursorColor: secondaryColor,
                     decoration: InputDecoration(
@@ -276,7 +277,10 @@ class _ConnexionState extends State<Connexion> {
                       if (result != null) {
                         // Gérer le retour, par exemple afficher un SnackBar
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(result), backgroundColor: Colors.green,),
+                          SnackBar(
+                            content: Text(result),
+                            backgroundColor: Colors.green,
+                          ),
                         );
                       }
                     },

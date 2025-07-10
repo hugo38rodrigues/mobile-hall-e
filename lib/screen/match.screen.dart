@@ -1,39 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../components/calendar.component.dart';
 import '../components/filters.component.dart';
 import '../components/matches/match-list.component.dart';
 
 class MatchScreen extends StatefulWidget {
+  const MatchScreen({super.key});
+
   @override
   _MatchScreenState createState() => _MatchScreenState();
 }
 
 class _MatchScreenState extends State<MatchScreen> {
-  DateTime _selectedDate = DateTime.now(); // La vraie date sélectionnée
+  DateTime _selectedDate = DateTime.now();
   Map<String, List<dynamic>> _filtersList = {};
+  bool _isFavoritesSelected = false;
 
   @override
   void initState() {
     super.initState();
-    // Charger les filtres après l'initialisation du widget
     _loadFilters();
   }
 
-  // Fonction pour charger les filtres de manière asynchrone
   Future<void> _loadFilters() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _filtersList = {
         'games': prefs.getStringList('games') ?? [],
         'leagues': prefs.getStringList('leagues') ?? [],
-        'teams': prefs.getStringList('teams') ?? []
+        'teams': prefs.getStringList('teams') ?? [],
       };
     });
   }
 
-  // Callback qui met à jour la date
   void _updateSelectedDate(DateTime date) {
     setState(() {
       _selectedDate = date;
@@ -42,8 +43,13 @@ class _MatchScreenState extends State<MatchScreen> {
 
   void _getFiltersList(Map<String, List<String>> filterList) {
     setState(() {
-      print(filterList);
       _filtersList = filterList;
+    });
+  }
+
+  void _getIsFavorisSelected(bool isFavoritesSelected) {
+    setState(() {
+      _isFavoritesSelected = isFavoritesSelected;
     });
   }
 
@@ -59,21 +65,21 @@ class _MatchScreenState extends State<MatchScreen> {
           child: SlideTransition(
             position: animation != null
                 ? Tween<Offset>(
-                    begin: Offset(-1.0, 0.0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeInOut,
-                  ))
-                : AlwaysStoppedAnimation(
-                    Offset.zero), // Évite une erreur si animation null
+                        begin: const Offset(-1.0, 0.0), end: Offset.zero)
+                    .animate(CurvedAnimation(
+                        parent: animation, curve: Curves.easeInOut))
+                : const AlwaysStoppedAnimation(Offset.zero),
             child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
-              child: FilterPage(getSelectedFilters: _getFiltersList),
+              child: FilterPage(
+                getSelectedFilters: _getFiltersList,
+                getIsFavorisSelected: _getIsFavorisSelected,
+                isFavoritesSelected: _isFavoritesSelected,
+              ),
             ),
           ),
         );
@@ -83,64 +89,51 @@ class _MatchScreenState extends State<MatchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: primaryColor,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 20),
-                  // Row pour aligner le calendrier et les icônes horizontalement
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment
-                        .spaceBetween, // Espacement entre les éléments
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment
-                            .center, // Aligner les icônes verticalement
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons
-                                .favorite_border_outlined), // Premier bouton iconique
-                            onPressed: () {
-                              // Action du premier bouton
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.tune), // Deuxième bouton iconique
-                            onPressed: () => _showFilterPage(context),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        width: 2,
-                      ),
-                      Expanded(
+    return SafeArea(
+      child: Container(
+        color: primaryColor,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.tune),
+                          onPressed: () => _showFilterPage(context),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: HorizontalCalendar(
-                              onDateSelected: _updateSelectedDate)),
-                    ],
-                  ),
-                ],
+                            onDateSelected: _updateSelectedDate,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return MatchList(
-                  filtersList: _filtersList,
-                  selectedDate: _selectedDate, // MatchList scrollable
-                );
-              },
-              childCount:
-                  1, // Tu peux mettre le nombre d'éléments dans la liste ici
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 80),
+                    child: MatchList(
+                      isFavoritesSelected: _isFavoritesSelected,
+                      filtersList: _filtersList,
+                      selectedDate: _selectedDate,
+                    ),
+                  );
+                },
+                childCount: 1,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
