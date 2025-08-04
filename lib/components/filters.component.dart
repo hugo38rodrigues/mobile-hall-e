@@ -216,10 +216,12 @@ class _FilterPageState extends ConsumerState<FilterPage> {
                 child: TextField(
                   cursorColor: secondaryColor,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.search, color: secondaryColor),
-                    hintText: 'Rechercher...',
-                    border: OutlineInputBorder(),
-                  ),
+                      prefixIcon: Icon(Icons.search, color: secondaryColor),
+                      hintText: 'Rechercher...',
+                      border: OutlineInputBorder(),
+                      hintStyle: TextStyle(color: secondaryColor),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: secondaryColor))),
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value;
