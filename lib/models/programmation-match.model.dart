@@ -1,42 +1,33 @@
-import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 
-class Match {
+class ProgrammationMatch {
   String id;
   List<String> streamPlatform;
   int hypeScore;
-  String numberOfGame;
   Team team1;
   Team team2;
-  List<BarMinimalInformations>? programmed;
   String leagueName;
   String gameName;
   String date;
 
-  Match({
+  ProgrammationMatch({
     required this.id,
-    required this.streamPlatform,
-    required this.numberOfGame,
     required this.hypeScore,
+    required this.streamPlatform,
     required this.team1,
     required this.team2,
     required this.gameName,
     required this.leagueName,
-    required this.programmed,
     required this.date,
   });
 
-  factory Match.fromJson(Map<String, dynamic> json) {
-    return Match(
+  factory ProgrammationMatch.fromJson(Map<String, dynamic> json) {
+    return ProgrammationMatch(
       id: json['id'],
       streamPlatform: List<String>.from(json['streamPlatform'] ?? []),
       hypeScore: json['hypeScore'],
       team1: Team.fromJson(json['team1']),
       team2: Team.fromJson(json['team2']),
-      numberOfGame: json['numberOfGame'],
-      programmed: (json['programmed'] as List<dynamic>? ?? [])
-          .map((prog) => BarMinimalInformations.fromJson(prog))
-          .toList(),
       leagueName: json['leagueName'],
       gameName: json['gameName'],
       date: json['date'],
@@ -50,8 +41,6 @@ class Match {
       'hypeScore': hypeScore,
       'team1': team1,
       'team2': team2,
-      'numberOfGame': numberOfGame,
-      'programmed': programmed,
       'leagueName': leagueName,
       'gameName': gameName,
       'date': date,

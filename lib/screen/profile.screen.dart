@@ -11,8 +11,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool locationDenied = false;
-
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(accountProvider);

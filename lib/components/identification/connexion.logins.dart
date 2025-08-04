@@ -5,10 +5,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/components/password/forgot-password.component.dart';
+import 'package:hall_e_mobile/models/user-factory.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
+import 'package:hall_e_mobile/utils/contact-mail.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 class Connexion extends ConsumerStatefulWidget {
@@ -99,15 +101,17 @@ class _ConnexionState extends ConsumerState<Connexion> {
           // Gère le timeout en lançant une exception
           throw DioException(
             requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            type: DioExceptionType.connectionTimeout,
             message: 'Timeout',
           );
         },
       );
 
       if (response.statusCode == 200) {
-        User user = User.fromMap(response.data);
+        final token = response.headers.value('Authorization');
+        Map<String, dynamic> data = {'token': token, ...response.data};
+        User user = UserFactory.createFromMap(data);
+
         ref.read(accountProvider.notifier).setAccount(user);
         setState(() {
           _isLoading = false;
@@ -198,7 +202,7 @@ class _ConnexionState extends ConsumerState<Connexion> {
                       focusedErrorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                         borderSide: BorderSide(
-                            color: Colors.redAccent,
+                            color: Colors.red,
                             width:
                                 2), // Bordure accentuée en cas d'erreur et focus
                       ),
@@ -320,6 +324,28 @@ class _ConnexionState extends ConsumerState<Connexion> {
                         "Me connecter",
                         style: TextStyle(fontSize: 20),
                       ),
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              margin: EdgeInsets.only(top: 10, bottom: 20),
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(fontSize: 14, color: secondaryColor),
+                  children: [
+                    TextSpan(text: "Un problème ? "),
+                    TextSpan(
+                      text: "Contactez nous",
+                      style: TextStyle(
+                          color: secondaryColor,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.bold),
+                      recognizer: TapGestureRecognizer()..onTap = launchEmail,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -4,7 +4,7 @@ class Favorites {
   List<String> gameName;
   List<String> leagueName;
   List<Team> teams;
-  List<String> barName;
+  List<Map<String, dynamic>> barName;
 
   Favorites({
     required this.gameName,
@@ -13,42 +13,16 @@ class Favorites {
     required this.barName,
   });
 
-  factory Favorites.fromMap(Map<String, dynamic> json, Favorites current) {
-    return Favorites(
-      gameName: json.containsKey('gameName')
-          ? List<String>.from(json['gameName'])
-          : current.gameName,
-      leagueName: json.containsKey('leagueName')
-          ? List<String>.from(json['leagueName'])
-          : current.leagueName,
-      teams: json.containsKey('teams')
-          ? (json['teams'] as List).map((team) => _mapToTeam(team)).toList()
-          : current.teams,
-      barName: json.containsKey('barName')
-          ? List<String>.from(json['barName'])
-          : current.barName,
-    );
-  }
 
   factory Favorites.fromMapInitial(Map<String, dynamic>? json) {
     return Favorites(
       gameName: List<String>.from(json?['gameName'] ?? []),
       leagueName: List<String>.from(json?['leagueName'] ?? []),
       teams:
-          (json?['teams'] as List?)?.map((team) => _mapToTeam(team)).toList() ??
+          (json?['teams'] as List?)?.map((team) => Team.fromJson(team)).toList() ??
               [],
-      barName: List<String>.from(json?['barName'] ?? []),
+      barName: List<Map<String, dynamic>>.from(json?['barName'] ?? []),
     );
-  }
-
-  static Team _mapToTeam(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      return Team.fromJson(data);
-    } else if (data is String) {
-      return Team(id: data, name: '', acronym: '', logoUrl: '');
-    } else {
-      return Team(id: '', name: '', acronym: '', logoUrl: '');
-    }
   }
 
   Map<String, dynamic> toJson() {

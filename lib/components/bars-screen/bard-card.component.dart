@@ -3,11 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
-import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/models/programmation-match.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BarCard extends ConsumerStatefulWidget {
@@ -19,7 +18,6 @@ class BarCard extends ConsumerStatefulWidget {
 }
 
 class _BarCardState extends ConsumerState<BarCard> {
-  LatLng? userPosition;
   bool locationDenied = false;
   bool isIos = Platform.isIOS;
 
@@ -65,17 +63,18 @@ class _BarCardState extends ConsumerState<BarCard> {
     return '${hours}H${formatedMins ?? mins}';
   }
 
-  List<Match> filterByDateMatch(List<Match> programatedMatch) {
+  List<ProgrammationMatch?> filterByDateMatch(
+      List<ProgrammationMatch?> programatedMatch) {
     programatedMatch.sort((a, b) {
-      DateTime dateA = DateTime.parse(a.date);
-      DateTime dateB = DateTime.parse(b.date);
+      DateTime dateA = DateTime.parse(a!.date);
+      DateTime dateB = DateTime.parse(b!.date);
       return dateA.compareTo(dateB);
     });
     return programatedMatch;
   }
 
   Future<void> openMapsWithDirections(
-      String destinationAddress, double latitude, double longitude) async {
+      String destinationAddress, double? latitude, double? longitude) async {
     try {
       final Uri googleMapsUri = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&origin=$latitude,$longitude&destination=${Uri.encodeComponent(destinationAddress)}',
@@ -97,11 +96,10 @@ class _BarCardState extends ConsumerState<BarCard> {
   @override
   Widget build(BuildContext context) {
     User profile = ref.watch(accountProvider);
-    double? userLatitude = profile.userLocation!.latitude;
-    double? userLongitude = profile.userLocation!.longitude;
-    Informations informations =
-        widget.bar.informations!;
-    List<Match> programatedMatch = widget.bar.programations!;
+    double userLatitude = profile.userLocation.latitude;
+    double userLongitude = profile.userLocation.longitude;
+    Informations informations = widget.bar.informations;
+    List<ProgrammationMatch>? programatedMatch = widget.bar.programations;
 
     return Card(
       borderOnForeground: true,
@@ -145,7 +143,7 @@ class _BarCardState extends ConsumerState<BarCard> {
                 padding:
                     EdgeInsets.only(left: 12, right: 12, top: 12, bottom: 12),
                 child: Column(
-                  children: filterByDateMatch(programatedMatch)
+                  children: filterByDateMatch(programatedMatch!)
                       .map(
                         (prog) => Row(
                           mainAxisAlignment: MainAxisAlignment
@@ -154,7 +152,7 @@ class _BarCardState extends ConsumerState<BarCard> {
                             SizedBox(
                               width: 60, // Taille fixe pour la date
                               child: Text(
-                                getDate(prog.date),
+                                getDate(prog!.date),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                     fontSize: 18,
@@ -219,7 +217,7 @@ class _BarCardState extends ConsumerState<BarCard> {
             SizedBox(height: 2),
             Container(
               alignment: Alignment(0, 100),
-              child: profile.userLocation!.isActivated
+              child: profile.userLocation.isActivated
                   ? SizedBox(
                       width: 175,
                       height: 30,

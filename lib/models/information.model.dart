@@ -9,8 +9,6 @@ class Informations {
   String? description;
   String? address;
   List<dynamic>? pictures;
-  double? longitude;
-  double? latitude;
 
   Informations({
     this.firstName,
@@ -19,20 +17,16 @@ class Informations {
     this.description,
     this.address,
     this.pictures,
-    this.longitude,
-    this.latitude,
   });
 
   factory Informations.fromJson(Map<String, dynamic> json) {
     return Informations(
-      firstName: json['firstName'],
+      firstName: json['firstName']?? 'guest',
       lastName: json['lastName'],
       name: json['name'],
       description: json['description'],
       address: json['address'],
       pictures: json['pictures'],
-      longitude: (json['longitude'] as num?)?.toDouble(),
-      latitude: (json['latitude'] as num?)?.toDouble(),
     );
   }
 
@@ -44,8 +38,6 @@ class Informations {
       'description': description,
       'address': address,
       'pictures': pictures,
-      'longitude': longitude,
-      'latitude': latitude,
     };
   }
 }

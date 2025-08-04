@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/screen/bar.screen.dart';
 import 'package:hall_e_mobile/screen/match.screen.dart';
 import 'package:hall_e_mobile/screen/profile.screen.dart';
@@ -6,12 +8,12 @@ import 'package:hall_e_mobile/screen/profile.screen.dart';
 import '../components/my-app-bar.component.dart';
 import '../styles/font-colors.dart';
 
-class HomeWrapperScreen extends StatefulWidget {
+class HomeWrapperScreen extends ConsumerStatefulWidget {
   @override
-  _HomeWrapperScreenState createState() => _HomeWrapperScreenState();
+  ConsumerState<HomeWrapperScreen> createState() => _HomeWrapperScreenState();
 }
 
-class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
+class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
@@ -26,75 +28,94 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
       double screenWidth, bool isTablet) {
     final isSelected = _selectedIndex == index;
 
-    final double iconSize = isTablet ? screenWidth * 0.04 : screenWidth * 0.05;
-    final double textSize =
-        isTablet ? screenWidth * 0.025 : screenWidth * 0.025;
-    final double capsulePaddingH = isTablet ? 12 : 16;
-    final double capsulePaddingV = isTablet ? 8 : 6;
+    // ✅ tailles adaptées mobile / tablette
+    final double iconSize = isTablet ? 28 : 32;
+    final double textSize = isTablet ? 14 : 13;
+    final double capsulePaddingH = isTablet ? 16 : 12;
+    final double capsulePaddingV = isTablet ? 10 : 8;
 
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: Container(
-        width: screenWidth * 0.25,
-        alignment: Alignment.center,
-        child: isSelected
-            ? Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: capsulePaddingH, vertical: capsulePaddingV),
-                decoration: BoxDecoration(
-                  color: secondaryColor, // capsule color
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onItemTapped(index),
+        child: Container(
+          alignment: Alignment.center,
+          child: isSelected
+              ? ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: screenWidth * 0.33),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: capsulePaddingH, vertical: capsulePaddingV),
+                    decoration: BoxDecoration(
+                      color: secondaryColor,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/icons/$iconPath',
+                          color: primaryColor,
+                          width: iconSize,
+                          height: iconSize,
+                        ),
+                        const SizedBox(height: 3),
+                        FittedBox(
+                          fit: BoxFit
+                              .scaleDown, // ✅ réduit le texte si nécessaire
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: textSize,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
                       'assets/icons/$iconPath',
-                      color: primaryColor,
+                      color: Colors.grey,
                       width: iconSize,
                       height: iconSize,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: textSize,
+                    const SizedBox(height: 3),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: textSize,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/icons/$iconPath',
-                    color: Colors.grey,
-                    width: iconSize,
-                    height: iconSize,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: textSize,
-                    ),
-                  ),
-                ],
-              ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final role = ref.watch(accountProvider).role;
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final double navBarHeight = isTablet ? 90 : 55;
+    final double navBarHeight = isTablet ? 90 : 80;
+    final String isNotBar = role != 'bar' ? "Bar" : "Ma programmation";
 
     return Scaffold(
       appBar: MyAppBar(),
@@ -152,17 +173,17 @@ class _HomeWrapperScreenState extends State<HomeWrapperScreen> {
             ),
             SafeArea(
               top: false,
+              bottom: false,
               child: Container(
                 color: primaryColor,
                 height: navBarHeight,
-                padding: const EdgeInsets.only(bottom: 5),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavButton('calendar_unselected.png', "Matches", 0,
                         screenWidth, isTablet),
-                    _buildNavButton(
-                        'beer_unselected.png', "Bar", 1, screenWidth, isTablet),
+                    _buildNavButton('beer_unselected.png', isNotBar, 1,
+                        screenWidth, isTablet),
                     _buildNavButton('user_unselected.png', "Profile", 2,
                         screenWidth, isTablet),
                   ],

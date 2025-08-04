@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hall_e_mobile/components/matches/matchDetailsPage.component.dart';
-import 'package:hall_e_mobile/models/programation-match.model.dart';
+import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
-import 'package:hall_e_mobile/utils/constants.utils.dart';
+import 'package:hall_e_mobile/utils/format-stream-url.utils.dart';
 import 'package:intl/intl.dart';
 
 class MatchCard extends ConsumerStatefulWidget {
@@ -17,7 +17,7 @@ class MatchCard extends ConsumerStatefulWidget {
   final int hypeScore;
   final Team team1;
   final Team team2;
-  final List<ProgramationMatch>? programmed;
+  final List<BarMinimalInformations>? programmed;
   final String leagueName;
   final String gameName;
   final String date;
@@ -51,20 +51,12 @@ class _MatchCardState extends ConsumerState<MatchCard> {
     return formattedTime;
   }
 
-  bool checkedMatchIsProgrammedWithBar(List<ProgramationMatch> programedMatch) {
+  bool checkedMatchIsProgrammedWithBar(
+      List<BarMinimalInformations> programedMatch) {
     User userLogin = ref.watch(accountProvider);
 
     return programedMatch.any(
-        (programmerBar) => programmerBar.name == userLogin.informations!.name);
-  }
-
-  getStreamName(String streamUrl) {
-    if (regexTwitch.hasMatch(streamUrl)) {
-      String leagueName = streamUrl.split('/')[3];
-      return 'twitch.tv/$leagueName';
-    }
-    List<String> splitUrl = streamUrl.split('/');
-    return 'youtube.com/${splitUrl[3]}/${splitUrl[4]}';
+        (programmerBar) => programmerBar.name == userLogin.informations.name);
   }
 
   @override
@@ -160,7 +152,7 @@ class _MatchCardState extends ConsumerState<MatchCard> {
                       ),
                     ),
 
-                    // League + "Match programmer"
+                    // League + "Match programmer + add programmation"
                     Container(
                       decoration: BoxDecoration(color: primaryColor50),
                       child: Padding(

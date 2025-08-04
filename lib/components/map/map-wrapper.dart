@@ -5,14 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/map/client-map.dart';
-import 'package:hall_e_mobile/models/programation-match.model.dart';
+import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MapWrapper extends ConsumerStatefulWidget {
-  final List<ProgramationMatch> addressList;
+  final List<BarMinimalInformations> addressList;
   const MapWrapper({required this.addressList});
 
   @override
@@ -22,7 +21,7 @@ class MapWrapper extends ConsumerStatefulWidget {
 class _MapWrapperState extends ConsumerState<MapWrapper> {
   bool isIos = Platform.isIOS;
   List barNameFavorites = [];
-  String idUser = "";
+  late User profile;
   bool isConnected = false;
 
   @override
@@ -36,29 +35,9 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
     if (profile.role != 'guest') {
       setState(() {
         barNameFavorites = profile.favorites!.barName;
-        idUser = profile.id;
+        profile = profile;
         isConnected = true;
       });
-    }
-  }
-
-  Future<void> openMapsWithDirections(
-      String destinationAddress, double latitude, double longitude) async {
-    try {
-      // Générer l'URL pour Google Maps ou Apple Plans
-      final Uri googleMapsUri = Uri.parse(
-          'https://www.google.com/maps/dir/?api=1&origin=$latitude,$longitude&destination=${Uri.encodeComponent(destinationAddress)}');
-      final Uri appleMapsUri = Uri.parse(
-        'maps://?saddr=$latitude,$longitude&daddr=${Uri.encodeComponent(destinationAddress)}',
-      );
-
-      if (isIos && await canLaunchUrl(appleMapsUri)) {
-        await launchUrl(appleMapsUri);
-      } else {
-        await launchUrl(googleMapsUri);
-      }
-    } catch (e) {
-      print("Erreur lors de l'ouverture de Maps: $e");
     }
   }
 
@@ -72,20 +51,22 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
   addFavoriteBarName(idBar) async {
     String? apiUrl = dotenv.env['API_URL'];
     Dio dio = Dio();
-
     try {
       Response response = await dio
-          .post('$apiUrl/favorites/bar-name',
-              data: {"idUser": idUser, "idBar": idBar},
+          .post('$apiUrl/favoris',
+              data: {"idUser": profile.id, "idBar": idBar},
               options: Options(
-                headers: {"Content-Type": "application/json"},
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${profile.token}"
+                },
               ))
           .timeout(
         Duration(seconds: 10),
         onTimeout: () {
           // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
+            requestOptions: RequestOptions(path: '$apiUrl/favoris'),
             type: DioExceptionType
                 .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
             message: 'Timeout',
@@ -112,19 +93,23 @@ class _MapWrapperState extends ConsumerState<MapWrapper> {
   deletedFavoriteBarName(String idBar) async {
     String? apiUrl = dotenv.env['API_URL'];
     Dio dio = Dio();
+    User profile = ref.read(accountProvider);
 
     try {
       Response response = await dio
-          .delete('$apiUrl/favorites/bar-name',
-              data: {"idUser": idUser, "idBar": idBar},
+          .delete('$apiUrl/favoris',
+              data: {"idUser": profile.id, "idBar": idBar},
               options: Options(
-                headers: {"Content-Type": "application/json"},
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${profile.token}"
+                },
               ))
           .timeout(
         Duration(seconds: 10),
         onTimeout: () {
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/favorites/bar-name'),
+            requestOptions: RequestOptions(path: '$apiUrl/favoris'),
             type: DioExceptionType.connectionTimeout,
             message: 'Timeout',
           );
