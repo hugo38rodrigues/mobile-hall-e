@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/favoris.model.dart';
 import 'package:hall_e_mobile/models/match.model.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
@@ -62,11 +63,11 @@ class _MatchListState extends ConsumerState<MatchList> {
           isLoading = false;
         });
       }
-      ;
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -74,11 +75,20 @@ class _MatchListState extends ConsumerState<MatchList> {
   Future<void> sendProgrammationMatch(matchId) async {
     String? apiUrl = dotenv.env['API_URL'];
     Dio dio = Dio();
-    String id = ref.watch(accountProvider).id;
+    User profile = ref.watch(accountProvider);
+    String id = profile.id;
 
     try {
       Response response = await dio
-          .post('$apiUrl/bar', data: {"matchId": matchId, "barId": id}).timeout(
+          .post('$apiUrl/bar',
+              data: {"matchId": matchId, "barId": id},
+              options: Options(
+                headers: {
+                  "Content-Type": "application/json",
+                  'Authorization': 'Bearer ${profile.token}'
+                },
+              ))
+          .timeout(
         Duration(seconds: 10),
         onTimeout: () {
           // Gère le timeout en lançant une exception
@@ -99,8 +109,9 @@ class _MatchListState extends ConsumerState<MatchList> {
       }
     } catch (e) {
       if (e is DioException) {
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }
@@ -112,27 +123,56 @@ class _MatchListState extends ConsumerState<MatchList> {
         matchDate.day == targetDate.day;
   }
 
+  Duration getTimeWithBo(String gameName, String bo) {
+    final normalizedGame = gameName.toLowerCase();
+
+    final Map<String, Map<String, Duration>> gameDurations = {
+      'league of legends': {
+        '1': const Duration(minutes: 33),
+        '3': const Duration(hours: 1, minutes: 50),
+        '5': const Duration(hours: 3, minutes: 50),
+      },
+      'cs go': {
+        '1': const Duration(minutes: 50),
+        '3': const Duration(hours: 2, minutes: 30),
+        '5': const Duration(hours: 5),
+      },
+      'valorant': {
+        '1': const Duration(minutes: 45),
+        '3': const Duration(hours: 2, minutes: 15),
+        '5': const Duration(hours: 4, minutes: 30),
+      },
+    };
+
+    final durations = gameDurations[normalizedGame];
+    if (durations != null && durations.containsKey(bo)) {
+      return durations[bo]!;
+    }
+
+    // Durée par défaut si jeu ou BO non reconnu
+    return const Duration(hours: 2);
+  }
+
+
   /// Filtre les matchs du jour sélectionné
   bool filterByDate(Match match, DateTime targetDate) {
-    // Parse la date du match en local (important si le backend envoie du UTC)
+    Duration timeWithBo = getTimeWithBo(match.gameName, match.numberOfGame);
     DateTime matchDate = DateTime.parse(match.date).toLocal();
 
-    // Définir les bornes du jour sélectionné (00:00 à 23:59:59.999)
     DateTime startOfDay =
         DateTime(targetDate.year, targetDate.month, targetDate.day);
     DateTime endOfDay =
         startOfDay.add(Duration(days: 1)).subtract(Duration(milliseconds: 1));
 
-    // Ne garder que les matchs compris dans cette journée
     bool isInSelectedDay =
-        matchDate.isAfter(startOfDay) && matchDate.isBefore(endOfDay);
-
+        !matchDate.isBefore(startOfDay) && !matchDate.isAfter(endOfDay);
     if (!isInSelectedDay) return false;
 
-    // Si on est sur aujourd’hui, on exclut les matchs déjà passés dans la journée
-    DateTime now = DateTime.now();
+    // Si c’est aujourd’hui, on exclut les matchs déjà passés
+    final now = DateTime.now();
     if (isSameDay(targetDate, now)) {
-      return matchDate.isAfter(now);
+      final matchEndTime = matchDate.add(timeWithBo);
+      return matchEndTime.isAfter(now);
     }
 
     return true;
@@ -209,6 +249,14 @@ class _MatchListState extends ConsumerState<MatchList> {
     return barNames.any((barName) => selectedBarName.contains(barName));
   }
 
+  List<Match> filterMatchesProgrammed(List<Match> listMatches) {
+    List<Match> matches = listMatches
+        .where((Match match) =>
+            match.programmed != null && match.programmed!.isEmpty)
+        .toList();
+    return matches;
+  }
+
   /// Fonction principale de filtrage
   List<Match> filterMatches(
     DateTime targetDate,
@@ -220,9 +268,9 @@ class _MatchListState extends ConsumerState<MatchList> {
     return matches.where((match) {
       if (widget.isFavoritesSelected) {
         // Si favoris sélectionnés, ne filtrer que par les favoris et ignorer les autres filtres
-        return filterByFavorites(match, ref.watch(accountProvider).favorites!) &&
-            filterByDate(
-                match, targetDate); // Seul le filtre de date s'applique
+        return filterByFavorites(
+                match, ref.watch(accountProvider).favorites!) &&
+            filterByDate(match, targetDate);
       } else {
         // Applique tous les filtres quand favoris n'est pas activé
         return filterByDate(match, targetDate) &&
@@ -241,11 +289,16 @@ class _MatchListState extends ConsumerState<MatchList> {
     List? selectedLeagues = widget.filtersList['leagues'];
     List? selectedTeams = widget.filtersList['teams'];
     List? selectedBarName = widget.filtersList['barName'];
-
     List<Match> filteredMatches = filterMatches(widget.selectedDate,
         selectedTeams, selectedGames, selectedLeagues, selectedBarName);
 
-    filteredMatches.sort((a, b) {
+    List<Match> filteredMatchesProgrammed =
+        filterMatchesProgrammed(filteredMatches);
+
+    List<Match> listMatches =
+        role == 'bar' ? filteredMatchesProgrammed : filteredMatches;
+
+    listMatches.sort((a, b) {
       DateTime dateA = DateTime.parse(a.date);
       DateTime dateB = DateTime.parse(b.date);
       return dateA.compareTo(dateB);
@@ -262,22 +315,26 @@ class _MatchListState extends ConsumerState<MatchList> {
                   selectionColor: secondaryColor,
                 ),
               )
-            : Column(
-                children: filteredMatches.map(
-                  (match) {
-                    return MatchCard(
-                      role: role,
-                      getIdMatch: sendProgrammationMatch,
-                      programmed: match.programmed,
-                      leagueName: match.leagueName,
-                      gameName: match.gameName,
-                      idMatch: match.id,
-                      date: match.date,
-                      team1: match.team1,
-                      team2: match.team2,
-                    );
-                  },
-                ).toList(),
+            : SingleChildScrollView(
+                child: Column(
+                  children: listMatches.map(
+                    (match) {
+                      return MatchCard(
+                        role: role,
+                        streamPlatform: match.streamPlatform,
+                        hypeScore: match.hypeScore,
+                        getIdMatch: sendProgrammationMatch,
+                        programmed: match.programmed,
+                        leagueName: match.leagueName,
+                        gameName: match.gameName,
+                        idMatch: match.id,
+                        date: match.date,
+                        team1: match.team1,
+                        team2: match.team2,
+                      );
+                    },
+                  ).toList(),
+                ),
               );
   }
 }

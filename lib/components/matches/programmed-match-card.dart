@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
-import 'package:intl/intl.dart';
+import 'package:hall_e_mobile/utils/date.dart';
+import 'package:hall_e_mobile/utils/format-stream-url.utils.dart';
 
 class ProgrammedMatchCard extends ConsumerStatefulWidget {
-  String idMatch;
-  String leagueName;
-  String gameName;
-  String date;
-  Team team2;
-  Team team1;
-  Function(String idMatch) getIdMatch;
+  final String idMatch;
+  final String leagueName;
+  final String gameName;
+  final List<String> streamPlatform;
+  final int hypeScore;
+  final String date;
+  final Team team2;
+  final Team team1;
+  final Function(String idMatch) getIdMatch;
   ProgrammedMatchCard(
       {required this.date,
       required this.gameName,
       required this.getIdMatch,
       required this.idMatch,
       required this.leagueName,
+      required this.hypeScore,
+      required this.streamPlatform,
       required this.team1,
       required this.team2});
 
@@ -26,18 +32,10 @@ class ProgrammedMatchCard extends ConsumerStatefulWidget {
 }
 
 class _ProgrammedMatchCardState extends ConsumerState<ProgrammedMatchCard> {
-  String formatTime(String date) {
-    // Forcer le parsing en UTC
-    DateTime dateTime = DateTime.parse(date).toLocal();
-
-    // Formatter l'heure sans conversion locale
-    String formattedTime = DateFormat("HH'h'mm").format(dateTime);
-    return formattedTime;
-  }
-
   @override
   Widget build(BuildContext context) {
-    String hours = formatTime(widget.date);
+    bool hasStreamPlatform = widget.streamPlatform.isNotEmpty;
+    String hours = formatDate(widget.date);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Material(
@@ -142,8 +140,44 @@ class _ProgrammedMatchCardState extends ConsumerState<ProgrammedMatchCard> {
                         ),
                       ),
                     ),
+                    Container(
+                      decoration: BoxDecoration(color: primaryColor50),
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 12, bottom: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (hasStreamPlatform)
+                              ...widget.streamPlatform.map((streamUrl) =>
+                                  Padding(
+                                    padding: EdgeInsetsGeometry.only(left: 10),
+                                    child: Text(
+                                      getStreamName(streamUrl),
+                                      style: TextStyle(color: secondaryColor),
+                                    ),
+                                  )),
+                            if (!hasStreamPlatform)
+                              Padding(
+                                padding: EdgeInsetsGeometry.only(left: 10),
+                                child: Text(
+                                  "Match pas diffusé",
+                                  style: TextStyle(color: secondaryColor),
+                                ),
+                              ),
+                            Row(
+                              children: List.generate(
+                                widget.hypeScore.clamp(0, 3),
+                                (index) => Icon(
+                                  FontAwesomeIcons.fire,
+                                  color: secondaryColor,
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
                     SizedBox(height: 12),
-
                     // Bloc des équipes centré
                     Container(
                       alignment: Alignment.center, // Centre verticalement

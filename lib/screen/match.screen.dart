@@ -89,8 +89,8 @@ class _MatchScreenState extends State<MatchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
+    return Scaffold(
+      body: Container(
         color: primaryColor,
         child: CustomScrollView(
           slivers: [
@@ -103,6 +103,7 @@ class _MatchScreenState extends State<MatchScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.tune),
+                          color: secondaryColor,
                           onPressed: () => _showFilterPage(context),
                         ),
                         const SizedBox(width: 8),

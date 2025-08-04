@@ -1,8 +1,13 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/profiles/informations-profile.component.dart';
-import 'package:hall_e_mobile/models/location-services.model.dart';
+import 'package:hall_e_mobile/components/profiles/favorites.component.dart';
+import 'package:hall_e_mobile/components/profiles/informations.component.dart';
+import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/services/location-service.services.dart';
+import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/utils/contact-mail.dart';
 
 class Profile extends ConsumerStatefulWidget {
   @override
@@ -10,97 +15,102 @@ class Profile extends ConsumerStatefulWidget {
 }
 
 class _ProfileState extends ConsumerState<Profile> {
-  bool locationDenied = false;
-
+  bool isFavorites = true;
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      location();
-    });
-  }
-
-  void location() async {
-    final locationService = LocationService(ref: ref);
-    final status = await locationService.requestAndFetchLocation();
-    switch (status) {
-      case LocationStatus.success:
-        // OK
-        break;
-      case LocationStatus.serviceDisabled:
-        _showLocationDisabledDialog();
-        break;
-      case LocationStatus.permissionDenied:
-      case LocationStatus.permissionDeniedForever:
-        showPermissionDeniedMessage();
-        break;
-      case LocationStatus.error:
-        _showErrorSnackbar();
-        break;
+    User user = ref.read(accountProvider);
+    AccountNotifier provider = ref.read(accountProvider.notifier);
+    LocationService location = LocationService();
+    if (user.role != 'bar') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        location.getLocation(context, provider);
+      });
     }
   }
 
-  void _showLocationDisabledDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Localisation désactivée"),
-        content: const Text(
-            "Veuillez activer la localisation pour afficher votre position sur la carte."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showErrorSnackbar() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Erreur"),
-        content: const Text("Une erreur est survenue veuillez réessayer"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showPermissionDeniedMessage() {
-    setState(() {
-      locationDenied = true;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Permission de localisation refusée"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  final List<String> items =
-      List.generate(1, (index) => "Élément ${index + 1}");
+  void handleChangeDisplayProfile() => {
+        setState(() {
+          isFavorites = !isFavorites;
+        })
+      };
 
   @override
   Widget build(BuildContext context) {
+    User profile = ref.watch(accountProvider);
     return SingleChildScrollView(
-        child: Column(children: [
-      InformationsProfile(),
-      ElevatedButton(
-        onPressed: () async {
-          // Déconnecter l'utilisateur
-          await ref.read(accountProvider.notifier).clearAccount();
-        },
-        child: Text('Se déconnecter'),
-      )
-    ]));
+      child: Column(
+        children: [
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              ElevatedButton(
+                onPressed: handleChangeDisplayProfile,
+                style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isFavorites ? secondaryColor : primaryColor),
+                child: Text(
+                  "Vos favoris",
+                  style: TextStyle(
+                      color: isFavorites ? primaryColor : secondaryColor),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: handleChangeDisplayProfile,
+                style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isFavorites ? primaryColor : secondaryColor),
+                child: Text(
+                  "Vos informations",
+                  style: TextStyle(
+                      color: isFavorites ? secondaryColor : primaryColor),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          isFavorites
+              ? FavoritesComponent(profile: profile)
+              : InformationsComponent(profile: profile),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: secondaryColor),
+                onPressed: () async {
+                  await ref.watch(accountProvider.notifier).logout();
+                },
+                child: Text(
+                  'Se déconnecter',
+                  style: TextStyle(color: primaryColor),
+                ),
+              ),
+            ],
+          ),
+          Container(
+            margin: EdgeInsets.only(top: 10, bottom: 20),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 14, color: secondaryColor),
+                children: [
+                  TextSpan(text: "Un problème ? "),
+                  TextSpan(
+                    text: "Contactez nous",
+                    style: TextStyle(
+                        color: secondaryColor,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.bold),
+                    recognizer: TapGestureRecognizer()..onTap = launchEmail,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

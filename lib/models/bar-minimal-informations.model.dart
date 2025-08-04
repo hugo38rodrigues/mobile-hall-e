@@ -1,11 +1,11 @@
-class ProgramationMatch {
+class BarMinimalInformations {
   String id;
   String address;
   String name;
   double latitude;
   double longitude;
 
-  ProgramationMatch({
+  BarMinimalInformations({
     required this.id,
     required this.address,
     required this.name,
@@ -13,9 +13,9 @@ class ProgramationMatch {
     required this.longitude,
   });
 
-  factory ProgramationMatch.fromJson(Map<String, dynamic> json) {
-    return ProgramationMatch(
-      id: json['_id'],
+  factory BarMinimalInformations.fromJson(Map<String, dynamic> json) {
+    return BarMinimalInformations(
+      id: json['id'],
       address: json['address'],
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),

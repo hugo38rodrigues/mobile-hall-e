@@ -8,7 +8,7 @@ import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 class ResetPassword extends StatefulWidget {
-  final String idUser;
+  final String? idUser;
 
   ResetPassword({required this.idUser});
 
@@ -145,8 +145,9 @@ class _ResetPasswordState extends State<ResetPassword> {
           Navigator.pop(context);
           isLoading = false;
         });
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
       }
     }
   }

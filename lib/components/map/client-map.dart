@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +12,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ClientMap extends ConsumerStatefulWidget {
-  List addressList;
-  List barNameFavorites;
-  Function handleStateBarNameFavorites;
+  final List addressList;
+  final List barNameFavorites;
+  final Function handleStateBarNameFavorites;
 
   ClientMap({
     required this.addressList,
@@ -27,8 +28,10 @@ class ClientMap extends ConsumerStatefulWidget {
 
 class _MapWrapperState extends ConsumerState<ClientMap> {
   bool isIos = Platform.isIOS;
+  late double latitudeUser;
+  late double longitudeUser;
   final PopupController _popupController = PopupController();
-  
+
   Future<void> openMapsWithDirections(
       String destinationAddress, double latitude, double longitude) async {
     try {
@@ -53,20 +56,31 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
   Widget build(BuildContext context) {
     User profile = ref.watch(accountProvider);
     bool isNotGuest = profile.role != 'guest';
-    return profile.userLocation!.isActivated
+
+    if (profile.userLocation.isActivated) {
+      setState(() {
+        longitudeUser = profile.userLocation.longitude;
+        latitudeUser = profile.userLocation.latitude;
+      });
+    }
+
+    return profile.userLocation.isActivated
         ? SizedBox(
             width: 350,
             height: 400,
             child: FlutterMap(
               options: MapOptions(
-                initialCenter: LatLng(profile.userLocation!.latitude!,
-                    profile.userLocation!.longitude!),
-                initialZoom: 14.5,
+                initialCenter: LatLng(latitudeUser, longitudeUser),
+                initialZoom: 15,
                 onTap: (_, __) => _popupController.hideAllPopups(),
               ),
               children: [
                 TileLayer(
-                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  urlTemplate:
+                      "https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${dotenv.env['TOKEN_MAP_TILTER']}",
+                  userAgentPackageName:
+                      'com.example.hall_e_mobile', // ← à adapter avec ton nom de package
+                  tileProvider: NetworkTileProvider(),
                 ),
 
                 MarkerLayer(
@@ -163,10 +177,8 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
                                 SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: () {
-                                    openMapsWithDirections(
-                                        geo.address,
-                                        profile.userLocation!.latitude!,
-                                        profile.userLocation!.longitude!);
+                                    openMapsWithDirections(geo.address,
+                                        latitudeUser, longitudeUser);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: primaryColor,
@@ -193,8 +205,7 @@ class _MapWrapperState extends ConsumerState<ClientMap> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: LatLng(profile.userLocation!.latitude!,
-                          profile.userLocation!.longitude!),
+                      point: LatLng(latitudeUser, longitudeUser),
                       width: 40,
                       height: 40,
                       child:

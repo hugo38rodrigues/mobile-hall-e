@@ -8,7 +8,7 @@ import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
 class SendCode extends StatefulWidget {
   final Function(int) getState;
-  final String idUser;
+  final String? idUser;
 
   SendCode({required this.getState, required this.idUser});
 
@@ -34,13 +34,15 @@ class _SendCodeState extends State<SendCode> {
     } catch (e) {
       if (e is DioException) {
         await Future.delayed(Duration(seconds: 1));
-        setState(() {
-          _isLoading = false;
-        });
-        // Appelle la fonction de gestion des erreurs
-        handleError(e, context);
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => _isLoading = false);
       }
     }
+    
   }
 
   void _onSubmit() async {

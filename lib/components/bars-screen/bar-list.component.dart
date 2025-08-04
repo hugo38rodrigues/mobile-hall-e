@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hall_e_mobile/components/bars-screen/bard-card.component.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
-import 'package:hall_e_mobile/models/information.model.dart';
+import 'package:hall_e_mobile/models/location.model.dart';
+import 'package:hall_e_mobile/models/user-factory.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font-colors.dart';
@@ -19,8 +20,6 @@ class BarList extends ConsumerStatefulWidget {
 class _BarListState extends ConsumerState<BarList> {
   List<User> bars = [];
   bool isLoading = false;
-
-  final Map<String, Map<String, double>> _geoCache = {};
 
   @override
   void initState() {
@@ -37,11 +36,11 @@ class _BarListState extends ConsumerState<BarList> {
     }
 
     try {
-      Response response = await dio.get('$apiUrl/client/').timeout(
+      Response response = await dio.get('$apiUrl/bars/').timeout(
         Duration(seconds: 10),
         onTimeout: () {
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/client/'),
+            requestOptions: RequestOptions(path: '$apiUrl/bars/'),
             type: DioExceptionType.connectionTimeout,
             message: 'Timeout',
           );
@@ -50,7 +49,7 @@ class _BarListState extends ConsumerState<BarList> {
 
       if (response.statusCode == 200) {
         List<User> barList = (response.data as List)
-            .map((bar) => User.fromMap(bar))
+            .map((bar) => UserFactory.createFromMap(bar))
             .toList();
         if (mounted) {
           setState(() {
@@ -61,37 +60,14 @@ class _BarListState extends ConsumerState<BarList> {
       }
     } catch (e) {
       if (e is DioException) {
-        handleError(e, context);
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
+        if (!mounted) return;
+
+        await handleError(e, context);
+
+        if (!mounted) return; // Vérifie encore après un await
+        setState(() => isLoading = false);
       }
     }
-  }
-
-  Future<Map<String, double>?> getLatLongFromAddressBar(String address) async {
-    if (_geoCache.containsKey(address)) return _geoCache[address];
-
-    try {
-      Dio dio = Dio();
-      final response = await dio.get(
-        'https://nominatim.openstreetmap.org/search?q=$address&format=json&limit=1',
-        options: Options(headers: {'User-Agent': 'FlutterApp'}),
-      );
-
-      if (response.statusCode == 200 && response.data.isNotEmpty) {
-        final coords = {
-          'lat': double.parse(response.data[0]['lat']),
-          'lon': double.parse(response.data[0]['lon']),
-        };
-        _geoCache[address] = coords;
-        return coords;
-      }
-    } catch (e) {
-      print("Erreur API: $e");
-    }
-
-    return null;
   }
 
   Future<List<User>> filterBarsWithinRadius(
@@ -102,22 +78,19 @@ class _BarListState extends ConsumerState<BarList> {
     List<User> filteredBars = [];
 
     for (final bar in bars) {
-      
-        Informations barInfo = bar.informations!;
+      Location barLocalisations = bar.userLocation;
+      final double distance = Geolocator.distanceBetween(
+        latitudeUser,
+        longitudeUser,
+        barLocalisations.latitude,
+        barLocalisations.longitude,
+      );
 
-        final double distance = Geolocator.distanceBetween(
-          latitudeUser,
-          longitudeUser,
-          barInfo.latitude!,
-          barInfo.longitude!,
-        );
+      final double distanceInKm = distance / 1000;
 
-        final double distanceInKm = distance / 1000;
-
-        if (distanceInKm <= 100) {
-          filteredBars.add(bar);
-        }
-      
+      if (distanceInKm <= 100) {
+        filteredBars.add(bar);
+      }
     }
 
     return filteredBars;
@@ -139,8 +112,11 @@ class _BarListState extends ConsumerState<BarList> {
   @override
   Widget build(BuildContext context) {
     final User profile = ref.watch(accountProvider);
+    bool isActivated = profile.userLocation.isActivated;
+    double latitudeUser = profile.userLocation.latitude;
+    double longitudeUser = profile.userLocation.longitude;
 
-    if (!profile.userLocation!.isActivated) {
+    if (!isActivated) {
       return Center(
         child: Text(
           "La localisation n'est pas activée.\nVeuillez l'activer pour voir les bars à proximité.",
@@ -150,39 +126,41 @@ class _BarListState extends ConsumerState<BarList> {
       );
     }
 
-    return isLoading
-        ? Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: 100),
-              child: CustomLoader(text: "Chargement des bars"),
+    return Scaffold(
+      backgroundColor: primaryColor,
+      body: isLoading
+          ? Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: CustomLoader(text: "Chargement des bars"),
+              ),
+            )
+          : FutureBuilder<List<User>>(
+              future: filterBarsWithActiveProgram(
+                  bars, latitudeUser, longitudeUser),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CustomLoader(text: "Filtrage en cours...");
+                } else if (snapshot.hasError) {
+                  return Center(child: Text("Erreur lors du filtrage"));
+                } else if (snapshot.data!.isEmpty) {
+                  return Center(
+                      heightFactor: 25,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "Aucun bar ne programme de matches à proximité",
+                          style: TextStyle(color: secondaryColor, fontSize: 15),
+                        ),
+                      ));
+                } else {
+                  return Column(
+                    children:
+                        snapshot.data!.map((bar) => BarCard(bar: bar)).toList(),
+                  );
+                }
+              },
             ),
-          )
-        : FutureBuilder<List<User>>(
-            future: filterBarsWithActiveProgram(
-              bars,
-              profile.userLocation!.latitude,
-              profile.userLocation!.longitude,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CustomLoader(text: "Filtrage en cours...");
-              } else if (snapshot.hasError) {
-                return Center(child: Text("Erreur lors du filtrage"));
-              } else if (snapshot.data!.isEmpty) {
-                return Center(
-                  heightFactor: 25,
-                  child: Text(
-                    "Aucun bar ne programme de matches",
-                    style: TextStyle(color: secondaryColor, fontSize: 16),
-                  ),
-                );
-              } else {
-                return Column(
-                  children:
-                      snapshot.data!.map((bar) => BarCard(bar: bar)).toList(),
-                );
-              }
-            },
-          );
+    );
   }
 }

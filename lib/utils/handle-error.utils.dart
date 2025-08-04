@@ -1,12 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
 
-// Fonction de gestion des erreurs avec Dio v5
 Future<void> handleError(DioException error, BuildContext context) async {
+  final container = ProviderScope.containerOf(context); // <--- 🔥
+
   Color errorColors = Colors.red;
+
   if (error.type == DioExceptionType.connectionTimeout ||
       error.type == DioExceptionType.receiveTimeout) {
-    // Gère le timeout
     print('Erreur de timeout : ${error.message}');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -15,9 +18,14 @@ Future<void> handleError(DioException error, BuildContext context) async {
       ),
     );
   } else if (error.response != null) {
-    // Si l'erreur provient de la réponse de l'API
-    String errorMessage = error.response?.data['message'] ?? 'Erreur inconnue';
+    final errorMessage = error.response?.data['message'] ?? 'Erreur inconnue';
     print('Erreur de l\'API : $errorMessage');
+
+    if (error.response?.statusCode == 401) {
+      // Token invalide → on déconnecte
+      await container.read(accountProvider.notifier).logout();
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(errorMessage),
@@ -25,7 +33,6 @@ Future<void> handleError(DioException error, BuildContext context) async {
       ),
     );
   } else {
-    // Gère le cas où la réponse de l'API n'a pas été reçue (problème de connexion)
     print('Erreur de connexion : ${error.message}');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
