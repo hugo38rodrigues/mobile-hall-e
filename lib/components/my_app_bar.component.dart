@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import '../styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => Size.fromHeight(50);
   @override
+  // TODO fix it
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text("EZONE", style: TextStyle(color: secondaryColor, fontSize: 40)),
-      backgroundColor: primaryColor,
+      iconTheme: const IconThemeData(color: textGold),
+      title:
+          Text("Hall Esport", style: TextStyle(color: textGold, fontSize: 40)),
+      backgroundColor: background,
     );
   }
 }

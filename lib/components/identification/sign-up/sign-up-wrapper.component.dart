@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/components/identification/sign-up/credentiels-sign-up.component.dart';
 import 'package:hall_e_mobile/components/identification/sign-up/informations-sign-up.component.dart';
 import 'package:hall_e_mobile/models/user-credentiels.model.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 
 class SignUp extends StatefulWidget {
   final Function() getStateProfile;
@@ -13,7 +13,8 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-  late UserCredentiels newCredentiels = UserCredentiels(email: '', password: '', role: '');
+  late UserCredentiels newCredentiels =
+      UserCredentiels(email: '', password: '', role: '');
   int state = 0;
 
   void getCredentiels(credentiels) {
@@ -28,12 +29,13 @@ class _SignUpState extends State<SignUp> {
     });
   }
 
-
   Widget signUpStep(int choice) {
     switch (choice) {
       case 1:
         return InformationsSignUp(
-          goBack: manageState, credentiels: newCredentiels, getStateProfile: widget.getStateProfile);
+            goBack: manageState,
+            credentiels: newCredentiels,
+            getStateProfile: widget.getStateProfile);
       default:
         return CredentielsSignUp(
             getCredentiels: getCredentiels,
@@ -50,12 +52,12 @@ class _SignUpState extends State<SignUp> {
         Text.rich(
           TextSpan(
             text: "Vous avez déjà un compte ?",
-            style: TextStyle(fontSize: 14, color: secondaryColor),
+            style: TextStyle(fontSize: 14, color: textGold),
             children: [
               TextSpan(
                 text: " Se connecter",
                 style: TextStyle(
-                  color: secondaryColor,
+                  color: textGold,
                   decoration: TextDecoration.underline,
                 ),
                 recognizer: TapGestureRecognizer()

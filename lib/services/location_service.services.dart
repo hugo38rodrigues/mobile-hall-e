@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/utils/snackbar.utils.dart';
 
 enum LocationStatus {
   success,
@@ -113,13 +114,7 @@ class LocationService {
   }
 
   void showPermissionDeniedMessage(context) {
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Permission de localisation refusée"),
-        backgroundColor: Colors.red,
-      ),
-    );
+    showErrorSnackBar(context, "Permission de localisation refusée" );
   }
 
   

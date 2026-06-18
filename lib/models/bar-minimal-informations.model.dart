@@ -13,13 +13,13 @@ class BarMinimalInformations {
     required this.longitude,
   });
 
-  factory BarMinimalInformations.fromJson(Map<String, dynamic> json) {
+  factory BarMinimalInformations.fromJson(Map<String, dynamic> data) {
     return BarMinimalInformations(
-      id: json['id'],
-      address: json['address'],
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      name: json['name'],
+      id: data['id'],
+      address: data['address'],
+      latitude: (data['latitude'] as num).toDouble(),
+      longitude: (data['longitude'] as num).toDouble(),
+      name: data['name'],
     );
   }
 

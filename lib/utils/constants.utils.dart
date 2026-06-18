@@ -1,6 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-const String loadMatchText = "Chargement des matchs...";
+const String loadMatchText = "Récupération des matchs...";
 const String connexionText = "Vous avez déjà un compte ? Se connecter";
 String? apiUrl = dotenv.env['API_URL'];
 String emailHallE = "hall.esport38@gmail.com";

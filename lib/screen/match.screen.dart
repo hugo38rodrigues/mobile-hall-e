@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../components/calendar.component.dart';
 import '../components/filters.component.dart';
-import '../components/matches/match-list.component.dart';
+import '../components/matches/match_list.component.dart';
 
 class MatchScreen extends StatefulWidget {
   const MatchScreen({super.key});
@@ -47,17 +47,11 @@ class _MatchScreenState extends State<MatchScreen> {
     });
   }
 
-  void _getIsFavorisSelected(bool isFavoritesSelected) {
-    setState(() {
-      _isFavoritesSelected = isFavoritesSelected;
-    });
-  }
-
   void _showFilterPage(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: background,
       builder: (context) {
         final animation = ModalRoute.of(context)?.animation;
         return FractionallySizedBox(
@@ -70,15 +64,13 @@ class _MatchScreenState extends State<MatchScreen> {
                         parent: animation, curve: Curves.easeInOut))
                 : const AlwaysStoppedAnimation(Offset.zero),
             child: Material(
-              color: Colors.white,
+              color: background,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
               child: FilterPage(
                 getSelectedFilters: _getFiltersList,
-                getIsFavorisSelected: _getIsFavorisSelected,
-                isFavoritesSelected: _isFavoritesSelected,
               ),
             ),
           ),
@@ -91,7 +83,7 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: primaryColor,
+        color: background,
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -103,7 +95,7 @@ class _MatchScreenState extends State<MatchScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.tune),
-                          color: secondaryColor,
+                          color: textWhite,
                           onPressed: () => _showFilterPage(context),
                         ),
                         const SizedBox(width: 8),

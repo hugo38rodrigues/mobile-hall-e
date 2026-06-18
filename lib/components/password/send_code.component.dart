@@ -1,29 +1,35 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
-import 'package:hall_e_mobile/utils/constants.utils.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
-class SendCode extends StatefulWidget {
+class SendCode extends ConsumerStatefulWidget {
   final Function(int) getState;
-  final String? idUser;
+  final String? userId;
+  final String? token;
 
-  SendCode({required this.getState, required this.idUser});
+  SendCode({required this.getState, required this.userId, required this.token});
 
   @override
   _SendCodeState createState() => _SendCodeState();
 }
 
-class _SendCodeState extends State<SendCode> {
+class _SendCodeState extends ConsumerState<SendCode> {
   final TextEditingController _codeController = TextEditingController();
   bool _isLoading = false;
 
   Future sendCode(String code) async {
+    String? apiUrl = dotenv.env['API_URL'];
     try {
-      Response response = await request({'idUser': widget.idUser, 'code': code},
-          '$apiUrl/verify-code', 'post');
+      Response response = await request(
+          data: {'userId': widget.userId, 'code': code},
+          '$apiUrl/verify-code',
+          'POST',
+          token: widget.token);
       if (response.statusCode == 200) {
         await Future.delayed(Duration(seconds: 1));
         setState(() {
@@ -42,7 +48,6 @@ class _SendCodeState extends State<SendCode> {
         setState(() => _isLoading = false);
       }
     }
-    
   }
 
   void _onSubmit() async {
@@ -57,19 +62,20 @@ class _SendCodeState extends State<SendCode> {
       children: [
         Text(
           'Veulliez entrer le code de vérification que vous avez reçus',
-          style: TextStyle(color: secondaryColor),
+          style: TextStyle(color: textGold),
         ),
         SizedBox(height: 25),
         TextField(
           controller: _codeController,
-          cursorColor: secondaryColor,
+          cursorColor: textGold,
+          style: TextStyle(color: textGold),
           decoration: InputDecoration(
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(20)),
-                borderSide: BorderSide(color: secondaryColor)),
+                borderSide: BorderSide(color: textGold)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(20)),
-              borderSide: BorderSide(color: secondaryColor, width: 2),
+              borderSide: BorderSide(color: textGold, width: 2),
             ),
           ),
         ),
@@ -77,7 +83,7 @@ class _SendCodeState extends State<SendCode> {
         ElevatedButton(
           onPressed: _onSubmit,
           style: ElevatedButton.styleFrom(
-              backgroundColor: secondaryColor, foregroundColor: primaryColor),
+              backgroundColor: textGold, foregroundColor: background),
           child: _isLoading
               ? CustomLoader(text: 'Vérification')
               : Text(

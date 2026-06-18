@@ -14,6 +14,6 @@ class _BarScreenState extends ConsumerState<BarScreen> {
   Widget build(BuildContext context) {
     bool isBar = ref.watch(accountProvider).role == 'bar';
 
-    return isBar ? ProgramationMatchList() : BarList();
+    return isBar ? MyProgramationMatchList() : BarList();
   }
 }

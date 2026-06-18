@@ -1,22 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
 import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 
-class ResetPassword extends StatefulWidget {
-  final String? idUser;
+class ResetPassword extends ConsumerStatefulWidget {
+  final String? userId;
+  final String token;
 
-  ResetPassword({required this.idUser});
+  ResetPassword({required this.userId, required this.token});
 
   @override
   _ResetPasswordState createState() => _ResetPasswordState();
 }
 
-class _ResetPasswordState extends State<ResetPassword> {
+class _ResetPasswordState extends ConsumerState<ResetPassword> {
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -118,7 +120,6 @@ class _ResetPasswordState extends State<ResetPassword> {
 
   Future sendResetPassword(String newPassword) async {
     isLoading = true;
-
     String? apiUrl = dotenv.env['API_URL'];
 
     try {
@@ -127,9 +128,10 @@ class _ResetPasswordState extends State<ResetPassword> {
       });
 
       Response response = await request(
-          {'id': widget.idUser, 'password': newPassword},
-          '$apiUrl/reset-password',
-          'post');
+        '$apiUrl/reset-password',
+          data: {'id': widget.userId, 'newPassword': newPassword},
+          'POST',
+          token: widget.token);
 
       if (response.statusCode == 200) {
         await Future.delayed(Duration(seconds: 1));
@@ -190,30 +192,28 @@ class _ResetPasswordState extends State<ResetPassword> {
                 Row(
                   children: [
                     Icon(Icons.person,
-                        color: isPasswordError
-                            ? Colors.redAccent
-                            : secondaryColor),
+                        color: isPasswordError ? Colors.redAccent : textGold),
                     Text('Nouveau mot de passe ',
                         style: TextStyle(
-                            color: isPasswordError
-                                ? Colors.redAccent
-                                : secondaryColor)),
+                            color:
+                                isPasswordError ? Colors.redAccent : textGold)),
                   ],
                 ),
                 TextField(
                   controller: newPasswordController,
-                  cursorColor: secondaryColor,
+                  cursorColor: textGold,
+                  style: TextStyle(color: textGold),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: secondaryColor)),
+                        borderSide: BorderSide(color: textGold)),
                     errorText: errorPasswordMessage,
                     errorStyle: TextStyle(
                         color: Colors.redAccent,
                         fontSize: 12), // Couleur du texte d'erreur
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(20)),
-                      borderSide: BorderSide(color: secondaryColor, width: 2),
+                      borderSide: BorderSide(color: textGold, width: 2),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -238,39 +238,33 @@ class _ResetPasswordState extends State<ResetPassword> {
                       Text(
                         'Le mot de passe doit contenir:',
                         style: TextStyle(
-                          color: secondaryColor,
+                          color: textGold,
                           fontSize: 10,
                         ),
                       ),
                       Text('- Une majuscule',
                           style: TextStyle(
-                              color: isNotUpper
-                                  ? Colors.redAccent
-                                  : secondaryColor,
+                              color: isNotUpper ? Colors.redAccent : textGold,
                               fontSize: 10)),
                       Text('- Une minuscule',
                           style: TextStyle(
-                              color: isNotLower
-                                  ? Colors.redAccent
-                                  : secondaryColor,
+                              color: isNotLower ? Colors.redAccent : textGold,
                               fontSize: 10)),
                       Text('- Un chiffre',
                           style: TextStyle(
-                              color: isNotNumber
-                                  ? Colors.redAccent
-                                  : secondaryColor,
+                              color: isNotNumber ? Colors.redAccent : textGold,
                               fontSize: 10)),
                       Text('- Un caractère spécial',
                           style: TextStyle(
                               color: isNotSpecialChar
                                   ? Colors.redAccent
-                                  : secondaryColor,
+                                  : textGold,
                               fontSize: 10)),
                       Text('- Minimun 8 caractères',
                           style: TextStyle(
                               color: isNotEightMinimal
                                   ? Colors.redAccent
-                                  : secondaryColor,
+                                  : textGold,
                               fontSize: 10))
                     ],
                   ),
@@ -288,28 +282,29 @@ class _ResetPasswordState extends State<ResetPassword> {
                     Icon(Icons.person,
                         color: isConfirmPasswordError
                             ? Colors.redAccent
-                            : secondaryColor),
+                            : textGold),
                     Text('Confirmer le mot de passe',
                         style: TextStyle(
                             color: isConfirmPasswordError
                                 ? Colors.redAccent
-                                : secondaryColor)),
+                                : textGold)),
                   ],
                 ),
                 TextField(
+                  style: TextStyle(color: textGold),
                   controller: confirmPasswordController,
-                  cursorColor: secondaryColor,
+                  cursorColor: textGold,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: secondaryColor)),
+                        borderSide: BorderSide(color: textGold)),
                     errorText: errorConfirmPasswordMessage,
                     errorStyle: TextStyle(
                         color: Colors.redAccent,
                         fontSize: 12), // Couleur du texte d'erreur
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(20)),
-                      borderSide: BorderSide(color: secondaryColor, width: 2),
+                      borderSide: BorderSide(color: textGold, width: 2),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -334,12 +329,12 @@ class _ResetPasswordState extends State<ResetPassword> {
               child: isLoading
                   ? CustomLoader(text: "Changement de mot de passe")
                   : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: secondaryColor),
+                      style:
+                          ElevatedButton.styleFrom(backgroundColor: textGold),
                       onPressed: onSubmit,
                       child: Text(
                         'Changer votre mot de passe',
-                        style: TextStyle(color: primaryColor),
+                        style: TextStyle(color: background),
                       ),
                     ))
         ],

@@ -1,4 +1,6 @@
 import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
+import 'package:hall_e_mobile/models/game.model.dart';
+import 'package:hall_e_mobile/models/league.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 
 class Match {
@@ -9,8 +11,8 @@ class Match {
   Team team1;
   Team team2;
   List<BarMinimalInformations>? programmed;
-  String leagueName;
-  String gameName;
+  League league;
+  Game game;
   String date;
 
   Match({
@@ -20,26 +22,26 @@ class Match {
     required this.hypeScore,
     required this.team1,
     required this.team2,
-    required this.gameName,
-    required this.leagueName,
+    required this.game,
+    required this.league,
     required this.programmed,
     required this.date,
   });
 
-  factory Match.fromJson(Map<String, dynamic> json) {
+  factory Match.fromJson(Map<String, dynamic> data) {
     return Match(
-      id: json['id'],
-      streamPlatform: List<String>.from(json['streamPlatform'] ?? []),
-      hypeScore: json['hypeScore'],
-      team1: Team.fromJson(json['team1']),
-      team2: Team.fromJson(json['team2']),
-      numberOfGame: json['numberOfGame'],
-      programmed: (json['programmed'] as List<dynamic>? ?? [])
-          .map((prog) => BarMinimalInformations.fromJson(prog))
+      id: data['id'] ?? '',
+      streamPlatform: List<String>.from(data['streamPlatform'] ?? []),
+      hypeScore: data['hypeScore'] ?? 0,
+      team1: Team.fromJson(data['team1'] ?? {}),
+      team2: Team.fromJson(data['team2'] ?? {}),
+      numberOfGame: data['numberOfGame'] ?? '',
+      programmed: (data['programmed'] as List?)
+          ?.map((prog) => BarMinimalInformations.fromJson(prog))
           .toList(),
-      leagueName: json['leagueName'],
-      gameName: json['gameName'],
-      date: json['date'],
+      league: League.fromJson(data['league'] ?? {}),
+      game: Game.fromJson(data['game'] ?? {}),
+      date: data['date'] ?? '',
     );
   }
 
@@ -48,12 +50,12 @@ class Match {
       'id': id,
       'streamPlatform': streamPlatform,
       'hypeScore': hypeScore,
-      'team1': team1,
-      'team2': team2,
+      'team1': team1.toJson(),
+      'team2': team2.toJson(),
       'numberOfGame': numberOfGame,
-      'programmed': programmed,
-      'leagueName': leagueName,
-      'gameName': gameName,
+      'programmed': programmed?.map((bar) => bar.toJson()).toList(),
+      'league': league.toJson(),
+      'game': game.toJson(),
       'date': date,
     };
   }

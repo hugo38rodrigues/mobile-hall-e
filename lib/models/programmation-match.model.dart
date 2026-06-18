@@ -1,3 +1,5 @@
+import 'package:hall_e_mobile/models/game.model.dart';
+import 'package:hall_e_mobile/models/league.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 
 class ProgrammationMatch {
@@ -6,8 +8,8 @@ class ProgrammationMatch {
   int hypeScore;
   Team team1;
   Team team2;
-  String leagueName;
-  String gameName;
+  League league;
+  Game game;
   String date;
 
   ProgrammationMatch({
@@ -16,21 +18,21 @@ class ProgrammationMatch {
     required this.streamPlatform,
     required this.team1,
     required this.team2,
-    required this.gameName,
-    required this.leagueName,
+    required this.game,
+    required this.league,
     required this.date,
   });
 
-  factory ProgrammationMatch.fromJson(Map<String, dynamic> json) {
+  factory ProgrammationMatch.fromJson(Map<String, dynamic> data) {
     return ProgrammationMatch(
-      id: json['id'],
-      streamPlatform: List<String>.from(json['streamPlatform'] ?? []),
-      hypeScore: json['hypeScore'],
-      team1: Team.fromJson(json['team1']),
-      team2: Team.fromJson(json['team2']),
-      leagueName: json['leagueName'],
-      gameName: json['gameName'],
-      date: json['date'],
+      id: data['id'],
+      streamPlatform: List<String>.from(data['streamPlatform'] ?? []),
+      hypeScore: data['hypeScore'],
+      team1: Team.fromJson(data['team1']),
+      team2: Team.fromJson(data['team2']),
+      league: League.fromJson(data['league']),
+      game: Game.fromJson(data['game']),
+      date: data['date'],
     );
   }
 
@@ -41,8 +43,8 @@ class ProgrammationMatch {
       'hypeScore': hypeScore,
       'team1': team1,
       'team2': team2,
-      'leagueName': leagueName,
-      'gameName': gameName,
+      'league': league,
+      'game': game,
       'date': date,
     };
   }

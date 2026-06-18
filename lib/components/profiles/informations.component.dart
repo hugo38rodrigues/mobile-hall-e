@@ -5,533 +5,423 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
+import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
+import 'package:hall_e_mobile/utils/snackbar.utils.dart';
+
+typedef FieldError = ({bool hasError, String? message});
+
+const FieldError _noError = (hasError: false, message: null);
+FieldError _errorOf(String msg) => (hasError: true, message: msg);
 
 class InformationsComponent extends ConsumerStatefulWidget {
+  const InformationsComponent({super.key, required this.profile});
+
   final User profile;
-  InformationsComponent({super.key, required this.profile});
 
   @override
-  _ProfileCardState createState() => _ProfileCardState();
+  ConsumerState<InformationsComponent> createState() =>
+      _InformationsComponentState();
 }
 
-class _ProfileCardState extends ConsumerState<InformationsComponent> {
-  late TextEditingController emailController;
-  late TextEditingController roleController;
-  late TextEditingController passwordController;
+class _InformationsComponentState extends ConsumerState<InformationsComponent> {
+  // Controllers — toujours présents
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
 
-  late String errorMessage;
-  bool isErrorPassword = false;
-  bool isErrorEmail = false;
-  bool isErrorLastName = false;
-  bool isErrorFirstName = false;
-  bool isErrorAddress = false;
-  bool isErrorBarName = false;
+  // Controllers client
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
 
-  TextEditingController? firstNameController;
-  TextEditingController? lastNameController;
+  // Controllers bar
+  late final TextEditingController _barNameController;
+  late final TextEditingController _barAddressController;
+  late final TextEditingController _barDescriptionController;
 
-  TextEditingController? barNameController;
-  TextEditingController? barAddressController;
-  TextEditingController? barDescriptionController;
+  late String _selectedRole;
+
+  // Erreurs par champ
+  FieldError _emailError = _noError;
+  FieldError _passwordError = _noError;
+  FieldError _firstNameError = _noError;
+  FieldError _lastNameError = _noError;
+  FieldError _barNameError = _noError;
+  FieldError _addressError = _noError;
 
   bool _isLoading = false;
-  bool obscurePassword = true;
+  bool _obscurePassword = true;
+
+  bool get _isClient => _selectedRole == 'client';
 
   @override
   void initState() {
     super.initState();
+    _selectedRole = widget.profile.role;
+    _emailController = TextEditingController(text: widget.profile.email);
+    _passwordController = TextEditingController();
 
-    emailController = TextEditingController(text: widget.profile.email);
-    roleController = TextEditingController(text: widget.profile.role);
-    passwordController = TextEditingController();
-
-    if (widget.profile.role == 'client') {
-      firstNameController =
-          TextEditingController(text: widget.profile.informations.firstName);
-      lastNameController =
-          TextEditingController(text: widget.profile.informations.lastName);
-    } else {
-      barNameController =
-          TextEditingController(text: widget.profile.informations.name);
-      barAddressController =
-          TextEditingController(text: widget.profile.informations.address);
-      barDescriptionController =
-          TextEditingController(text: widget.profile.informations.description);
-    }
+    // Tous les controllers initialisés une seule fois
+    // → pas de recréation lors du changement de rôle
+    _firstNameController =
+        TextEditingController(text: widget.profile.informations.firstName);
+    _lastNameController =
+        TextEditingController(text: widget.profile.informations.lastName);
+    _barNameController =
+        TextEditingController(text: widget.profile.informations.name);
+    _barAddressController =
+        TextEditingController(text: widget.profile.informations.address);
+    _barDescriptionController =
+        TextEditingController(text: widget.profile.informations.description);
   }
 
   @override
   void dispose() {
-    emailController.dispose();
-    roleController.dispose();
-    passwordController.dispose();
-
-    firstNameController?.dispose();
-    lastNameController?.dispose();
-    barNameController?.dispose();
-    barAddressController?.dispose();
-    barDescriptionController?.dispose();
-
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _barNameController.dispose();
+    _barAddressController.dispose();
+    _barDescriptionController.dispose();
     super.dispose();
   }
 
-  Future<void> sendUpdateProfile(
-      WidgetRef ref, Map<String, dynamic> profile) async {
-    setState(() {
-      _isLoading = false;
-    });
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    showSuccessSnackBar(context, message);
+  }
 
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
+  void _showError(String message) {
+    if (!mounted) return;
+    showErrorSnackBar(context, message);
+  }
+
+  // ---------------------------------------------------------------------------
+  // API
+  // ---------------------------------------------------------------------------
+  Future<void> _sendUpdateProfile(Map<String, dynamic> profile) async {
+    final apiUrl = dotenv.env['API_URL'];
+    setState(() => _isLoading = true);
 
     try {
-      Response response = await dio
-          .put('$apiUrl/',
+      final response = await request('PUT', '$apiUrl/user/update-profile',
               data: {'userId': widget.profile.id, 'profile': profile},
-              options: Options(
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": "Bearer ${widget.profile.token}"
-                },
-              ))
+              token: widget.profile.token)
           .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          _isLoading = false;
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
-            message: 'Timeout',
-          );
-        },
+        const Duration(seconds: 10),
+        onTimeout: () => throw DioException(
+          requestOptions: RequestOptions(path: '$apiUrl/'),
+          type: DioExceptionType.connectionTimeout,
+          message: 'Timeout',
+        ),
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        ref.read(accountProvider.notifier).updateAccount(
-            {'email': data.email, 'information': data.informations});
-        setState(() {
-          _isLoading = false;
+        final data = response.data as Map<String, dynamic>;
+        ref.read(accountProvider.notifier).updateAccount({
+          'email': data['email'],
+          'information': data['informations'],
         });
+        _showSuccess('Profil mis à jour avec succès');
       }
-    } catch (e) {
-      if (e is DioException) {
-        if (!mounted) return;
-
-        await handleError(e, context);
-      }
+    } on DioException catch (e) {
+      final msg = e.type == DioExceptionType.connectionTimeout
+          ? 'Délai dépassé — vérifiez votre connexion'
+          : e.response?.data?['message'] as String? ??
+              'Une erreur est survenue';
+      _showError(msg);
+      if (mounted) await handleError(e, context);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  bool checkEmail(String email) {
-    return regexEmail.hasMatch(email);
+  bool _validateEmail(String email) {
+    final error = email.isEmpty || !regexEmail.hasMatch(email)
+        ? _errorOf('Email invalide')
+        : _noError;
+    setState(() => _emailError = error);
+    return !error.hasError;
   }
 
-  bool passwordHasEightMinimal(String password) {
-    return regexLength8.hasMatch(password);
-  }
+  bool _validatePassword(String password) {
+    if (password.isEmpty) return true;
 
-  bool passwordHasSpecialChar(String password) {
-    return regexSpecialChar.hasMatch(password);
-  }
-
-  bool passwordHasNumber(String password) {
-    return regexStringWithNumber.hasMatch(password);
-  }
-
-  bool passwordHasUpper(String password) {
-    return regexUpperCase.hasMatch(password);
-  }
-
-  bool checkName(String name) {
-    return regexString.hasMatch(name);
-  }
-
-  bool checkFormatAddress(String address) {
-    return address.split(',').length > 1;
-  }
-
-  bool checkStreet(String street) {
-    return regexStreet.hasMatch(street);
-  }
-
-  bool checkPostalCode(String postalCode) {
-    return regexPostalCode.hasMatch(postalCode);
-  }
-
-  bool checkCity(String city) {
-    return regexCity.hasMatch(city);
-  }
-
-  bool validateClientInputs(String firstName, String lastName) {
-    bool isValid = true;
-
-    if (!checkName(firstName)) {
-      isErrorFirstName = true;
-      errorMessage = "Votre prénom doit contenir uniquement des lettres";
-      isValid = false;
+    String? msg;
+    if (!regexLength8.hasMatch(password)) {
+      msg = 'Minimum 8 caractères';
+    } else if (!regexStringWithNumber.hasMatch(password)) {
+      msg = 'Doit contenir un chiffre';
+    } else if (!regexSpecialChar.hasMatch(password)) {
+      msg = 'Doit contenir un caractère spécial';
+    } else if (!regexUpperCase.hasMatch(password)) {
+      msg = 'Doit contenir une majuscule';
     }
 
-    if (!checkName(lastName)) {
-      isErrorLastName = true;
-      errorMessage = "Votre nom doit contenir uniquement des lettres";
-      isValid = false;
-    }
-
-    return isValid;
+    final error = msg != null ? _errorOf(msg) : _noError;
+    setState(() => _passwordError = error);
+    return !error.hasError;
   }
 
-  bool validateBarInputs(String name, String address) {
-    bool isValid = true;
+  bool _validateClientInputs(String firstName, String lastName) {
+    final fnError = !regexString.hasMatch(firstName)
+        ? _errorOf('Prénom invalide — lettres uniquement')
+        : _noError;
+    final lnError = !regexString.hasMatch(lastName)
+        ? _errorOf('Nom invalide — lettres uniquement')
+        : _noError;
+    setState(() {
+      _firstNameError = fnError;
+      _lastNameError = lnError;
+    });
+    return !fnError.hasError && !lnError.hasError;
+  }
 
-    if (!checkName(name)) {
-      isErrorBarName = true;
-      errorMessage = "Le nom du bar doit contenir uniquement des lettres";
-      isValid = false;
-    }
-
-    if (!checkFormatAddress(address)) {
-      isErrorAddress = true;
-      errorMessage =
-          "Adresse invalide. Format attendu: rue, code postal, ville";
-      return false;
-    }
+  bool _validateBarInputs(String name, String address) {
+    final nameError = !regexString.hasMatch(name)
+        ? _errorOf('Nom du bar invalide — lettres uniquement')
+        : _noError;
+    setState(() => _barNameError = nameError);
+    if (nameError.hasError) return false;
 
     final parts = address.split(',');
-    if (parts.length < 3) {
-      isErrorAddress = true;
-      errorMessage = "Adresse incomplète";
-      return false;
-    }
+    FieldError addrError = _noError;
 
-    if (!checkStreet(parts[0])) {
-      isErrorAddress = true;
-      errorMessage = "Rue invalide : commencez par un numéro puis une rue";
-      isValid = false;
-    }
-
-    if (!checkPostalCode(parts[1].trim())) {
-      isErrorAddress = true;
-      errorMessage = "Code postal invalide";
-      isValid = false;
-    }
-
-    if (!checkCity(parts[2].trim())) {
-      isErrorAddress = true;
-      errorMessage = "Ville invalide";
-      isValid = false;
-    }
-
-    return isValid;
-  }
-
-  bool validatePassword(String password) {
-    if (!passwordHasEightMinimal(password)) {
-      errorMessage = "Mot de passe : minimum 8 caractères";
-      return false;
-    }
-
-    if (!passwordHasNumber(password)) {
-      errorMessage = "Mot de passe : doit contenir un chiffre";
-      return false;
-    }
-
-    if (!passwordHasSpecialChar(password)) {
-      errorMessage = "Mot de passe : doit contenir un caractère spécial";
-      return false;
-    }
-
-    if (!passwordHasUpper(password)) {
-      errorMessage = "Mot de passe : doit contenir une majuscule";
-      return false;
-    }
-
-    return true;
-  }
-
-  void submitData(WidgetRef ref) {
-    final email = emailController.text;
-    final password = passwordController.text;
-    final role = roleController.text;
-
-    late String firstName;
-    late String lastName;
-    late String description;
-    late String barName;
-    late String address;
-
-    bool isValid = true;
-    isErrorFirstName = isErrorLastName = isErrorBarName =
-        isErrorAddress = isErrorPassword = isErrorEmail = false;
-
-    if (!checkEmail(email)) {
-      isErrorEmail = true;
-      errorMessage = "Email invalide";
-      isValid = false;
-    }
-
-    if (password != '' && !validatePassword(password)) {
-      isErrorPassword = true;
-      isValid = false;
-    }
-
-    if (role == 'client') {
-      firstName = firstNameController!.text;
-      lastName = lastNameController!.text;
-      isValid &= validateClientInputs(firstName, lastName);
+    if (parts.length < 2) {
+      addrError = _errorOf('Format attendu : rue, code postal ville');
     } else {
-      barName = barNameController?.text ?? '';
-      address = barAddressController?.text ?? '';
-      description = barDescriptionController?.text ?? '';
-      isValid &= validateBarInputs(barName, address);
+      final street = parts[0].trim();
+      final secondPart = parts[1].trim();
+      final spaceIndex = secondPart.indexOf(' ');
+
+      if (!regexStreet.hasMatch(street)) {
+        addrError = _errorOf('Rue invalide : numéro puis nom de rue');
+      } else if (spaceIndex == -1) {
+        addrError = _errorOf('Format attendu : code postal puis ville');
+      } else {
+        final postalCode = secondPart.substring(0, spaceIndex).trim();
+        final city = secondPart.substring(spaceIndex + 1).trim();
+
+        if (!regexPostalCode.hasMatch(postalCode)) {
+          addrError = _errorOf('Code postal invalide');
+        } else if (!regexCity.hasMatch(city)) {
+          addrError = _errorOf('Ville invalide');
+        }
+      }
     }
 
-    if (!isValid) {
-      setState(() {});
-      return;
-    }
+    setState(() => _addressError = addrError);
+    return !addrError.hasError;
+  }
 
-    final profile = role == 'client'
-        ? {
-            "firstName": firstName,
-            "lastName": lastName,
-          }
-        : {
-            "name": barName,
-            "address": address,
-            "description": description,
-          };
-
-    final completeProfile = {
-      'email': email,
-      'password': password,
-      'role': role,
-      ...profile,
-    };
+  void _submitData() {
     setState(() {
-      passwordController.text = "";
+      _emailError = _passwordError = _firstNameError =
+          _lastNameError = _barNameError = _addressError = _noError;
     });
 
-    sendUpdateProfile(ref, completeProfile);
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    bool isValid = _validateEmail(email) & _validatePassword(password);
+
+    String firstName = '', lastName = '';
+    String barName = '', address = '', description = '';
+
+    if (_isClient) {
+      firstName = _firstNameController.text;
+      lastName = _lastNameController.text;
+      isValid &= _validateClientInputs(firstName, lastName);
+    } else {
+      barName = _barNameController.text;
+      address = _barAddressController.text;
+      description = _barDescriptionController.text;
+      isValid &= _validateBarInputs(barName, address);
+    }
+
+    if (!isValid) return;
+
+    final roleProfile = _isClient
+        ? {'firstName': firstName, 'lastName': lastName}
+        : {'name': barName, 'address': address, 'description': description};
+
+    setState(() => _passwordController.clear());
+
+    _sendUpdateProfile({
+      'email': email,
+      'password': password,
+      'role': _selectedRole,
+      ...roleProfile,
+    });
   }
 
+  // ---------------------------------------------------------------------------
+  // Build helpers
+  // ---------------------------------------------------------------------------
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    FieldError error = _noError,
+    bool readOnly = false,
+    bool obscure = false,
+    bool showToggle = false,
+  }) {
+    final color = error.hasError ? Colors.red : textGold;
+
+    return TextFormField(
+      style: TextStyle(color: textWhite),
+      controller: controller,
+      readOnly: readOnly,
+      obscureText: obscure,
+      cursorColor: color,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: color),
+        errorText: error.message,
+        errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
+        border: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide(color: color),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide(color: color, width: 2),
+        ),
+        errorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide(color: Colors.red, width: 2),
+        ),
+        focusedErrorBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide(color: Colors.redAccent, width: 2),
+        ),
+        suffixIcon: showToggle
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: textGold,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildClientFields() => Column(
+        children: [
+          _buildField(
+            controller: _firstNameController,
+            label: 'Prénom',
+            error: _firstNameError,
+          ),
+          const SizedBox(height: 15),
+          _buildField(
+            controller: _lastNameController,
+            label: 'Nom',
+            error: _lastNameError,
+          ),
+        ],
+      );
+
+  Widget _buildBarFields() => Column(
+        children: [
+          _buildField(
+            controller: _barNameController,
+            label: 'Nom du bar',
+            error: _barNameError,
+          ),
+          const SizedBox(height: 20),
+          _buildField(
+            controller: _barAddressController,
+            label: 'Adresse',
+            error: _addressError,
+          ),
+          const SizedBox(height: 20),
+          _buildField(
+            controller: _barDescriptionController,
+            label: 'Description',
+          ),
+        ],
+      );
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final profile = widget.profile;
-    bool hasError = isErrorPassword ||
-        isErrorEmail ||
-        isErrorLastName ||
-        isErrorFirstName ||
-        isErrorAddress ||
-        isErrorBarName;
-    Color colorsFirstName = isErrorFirstName ? Colors.red : secondaryColor;
-    Color colorsLastName = isErrorLastName ? Colors.red : secondaryColor;
-    Color colorsEmail = isErrorEmail ? Colors.red : secondaryColor;
-    Color colorsPassword = isErrorPassword ? Colors.red : secondaryColor;
-    Color colorsBarName = isErrorBarName ? Colors.red : secondaryColor;
-    Color colorsAddress = isErrorAddress ? Colors.red : secondaryColor;
-    Color colorsErrorMessage = hasError ? Colors.red : secondaryColor;
-
     return Card(
-      color: primaryColor,
+      color: background,
       elevation: 4,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          side: BorderSide(color: secondaryColor)),
-      borderOnForeground: true,
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: textGold),
+      ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Text(
-                'Vos informations',
-                style: TextStyle(color: secondaryColor, fontSize: 20),
-              )
-            ]),
-            SizedBox(
-              height: 15,
-            ),
-            TextFormField(
-              controller: emailController,
-              cursorColor: colorsEmail,
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(20)),
-                      borderSide: BorderSide(color: colorsEmail)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    borderSide: BorderSide(color: secondaryColor, width: 2),
-                  ),
-                  labelText: 'Email',
-                  labelStyle: TextStyle(color: colorsEmail)),
-            ),
-            SizedBox(height: 15),
-            TextFormField(
-              controller: passwordController,
-              cursorColor: colorsPassword,
-              obscureText:
-                  obscurePassword, // ✅ obligatoire pour cacher le texte
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    borderSide: BorderSide(color: colorsPassword)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  borderSide: BorderSide(color: colorsPassword, width: 2),
-                ),
-                labelText: 'Changer votre mot de passe',
-                labelStyle: TextStyle(color: secondaryColor),
+            Text('Vos informations',
+                style: TextStyle(color: textGold, fontSize: 20)),
+            const SizedBox(height: 15),
 
-                // ✅ ton suffixIcon ici, pas ailleurs
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: secondaryColor,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      obscurePassword = !obscurePassword;
-                    });
-                  },
-                ),
+            _buildField(
+              controller: _emailController,
+              label: 'Email',
+              error: _emailError,
+            ),
+            const SizedBox(height: 15),
+
+            _buildField(
+              controller: _passwordController,
+              label: 'Changer votre mot de passe',
+              error: _passwordError,
+              obscure: _obscurePassword,
+              showToggle: true,
+            ),
+            const SizedBox(height: 15),
+
+            // Rôle — lecture seule, non focusable
+            AbsorbPointer(
+              child: _buildField(
+                controller: TextEditingController(text: _selectedRole),
+                label: 'Rôle',
+                readOnly: true,
               ),
             ),
-            SizedBox(height: 15),
-            TextFormField(
-              controller: roleController,
-              readOnly: true,
-              cursorColor: secondaryColor,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    borderSide: BorderSide(color: secondaryColor)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  borderSide: BorderSide(color: secondaryColor, width: 2),
-                ),
-                labelText: 'Role',
-                labelStyle: TextStyle(color: secondaryColor),
+            const SizedBox(height: 15),
+
+            // Champs dynamiques avec transition
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: KeyedSubtree(
+                key: ValueKey(_selectedRole),
+                child: _isClient ? _buildClientFields() : _buildBarFields(),
               ),
             ),
-            SizedBox(height: 15),
-            if (profile.role == 'client')
-              Column(
-                children: [
-                  TextFormField(
-                    controller: firstNameController,
-                    cursorColor: colorsFirstName,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: colorsFirstName)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide:
-                            BorderSide(color: colorsFirstName, width: 2),
-                      ),
-                      labelText: 'Nom',
-                      labelStyle: TextStyle(color: colorsFirstName),
-                    ),
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: background,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(color: textGold, width: 2),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  SizedBox(height: 15),
-                  TextFormField(
-                    controller: lastNameController,
-                    cursorColor: colorsLastName,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: secondaryColor)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: colorsLastName, width: 2),
-                      ),
-                      labelText: 'Prénom',
-                      labelStyle: TextStyle(color: colorsLastName),
-                    ),
-                  ),
-                ],
-              )
-            else
-              Column(
-                children: [
-                  TextFormField(
-                    controller: barNameController,
-                    cursorColor: colorsBarName,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: colorsBarName)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: colorsBarName, width: 2),
-                      ),
-                      labelText: 'Nom du bar',
-                      labelStyle: TextStyle(color: colorsBarName),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: barAddressController,
-                    cursorColor: colorsAddress,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: colorsAddress)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: colorsAddress, width: 2),
-                      ),
-                      labelText: 'Adresse',
-                      labelStyle: TextStyle(color: colorsAddress),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  TextFormField(
-                    controller: barDescriptionController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: secondaryColor)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: secondaryColor, width: 2),
-                      ),
-                      labelText: 'Description',
-                      labelStyle: TextStyle(color: secondaryColor),
-                    ),
-                  ),
-                ],
-              ),
-            SizedBox(height: 10),
-            hasError
-                ? Text(errorMessage,
-                    style: TextStyle(color: colorsErrorMessage))
-                : SizedBox.shrink(),
-            SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    color: secondaryColor, // couleur de la bordure
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
                 ),
+                onPressed: _isLoading ? null : _submitData,
+                child: _isLoading
+                    ? CustomLoader(text: 'Enregistrement en cours...')
+                    : Text('Enregistrer les modifications',
+                        style: TextStyle(color: textGold)),
               ),
-              onPressed: () => submitData(ref),
-              child: _isLoading
-                  ? CustomLoader(text: 'Enregistrement en cours...')
-                  : Text(
-                      'Enregistrer les modifications',
-                      style: TextStyle(color: secondaryColor),
-                    ),
             ),
           ],
         ),

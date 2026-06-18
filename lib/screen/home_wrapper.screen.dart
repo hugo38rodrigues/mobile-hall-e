@@ -4,9 +4,10 @@ import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/screen/bar.screen.dart';
 import 'package:hall_e_mobile/screen/match.screen.dart';
 import 'package:hall_e_mobile/screen/profile.screen.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 
-import '../components/my-app-bar.component.dart';
-import '../styles/font-colors.dart';
+import '../components/my_app_bar.component.dart';
+
 
 class HomeWrapperScreen extends ConsumerStatefulWidget {
   @override
@@ -28,7 +29,6 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
       double screenWidth, bool isTablet) {
     final isSelected = _selectedIndex == index;
 
-    // ✅ tailles adaptées mobile / tablette
     final double iconSize = isTablet ? 28 : 32;
     final double textSize = isTablet ? 14 : 13;
     final double capsulePaddingH = isTablet ? 16 : 12;
@@ -46,29 +46,29 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
                     padding: EdgeInsets.symmetric(
                         horizontal: capsulePaddingH, vertical: capsulePaddingV),
                     decoration: BoxDecoration(
-                      color: secondaryColor,
-                      borderRadius: BorderRadius.circular(30),
+                      color: btnBg50Gold,
+                      border: Border.all(color: borderGold50),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Image.asset(
                           'assets/icons/$iconPath',
-                          color: primaryColor,
+                          color: textGold,
                           width: iconSize,
                           height: iconSize,
                         ),
                         const SizedBox(height: 3),
                         FittedBox(
-                          fit: BoxFit
-                              .scaleDown, // ✅ réduit le texte si nécessaire
+                          fit: BoxFit.scaleDown,
                           child: Text(
                             label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: primaryColor,
+                              color: textGold,
                               fontWeight: FontWeight.bold,
                               fontSize: textSize,
                             ),
@@ -120,77 +120,70 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
     return Scaffold(
       appBar: MyAppBar(),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 600;
-                  const double maxContentWidth = 600;
+        bottom: false, // le bas est géré par bottomNavigationBar
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 600;
+            const double maxContentWidth = 600;
 
-                  return PageView(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _selectedIndex = index;
-                      });
-                    },
-                    children: [
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth:
-                                isWide ? maxContentWidth : double.infinity,
-                          ),
-                          child: MatchScreen(),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth:
-                                isWide ? maxContentWidth : double.infinity,
-                          ),
-                          child: BarScreen(),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth:
-                                isWide ? maxContentWidth : double.infinity,
-                          ),
-                          child: ProfileScreen(),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            SafeArea(
-              top: false,
-              bottom: false,
-              child: Container(
-                color: primaryColor,
-                height: navBarHeight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildNavButton('calendar_unselected.png', "Matches", 0,
-                        screenWidth, isTablet),
-                    _buildNavButton('beer_unselected.png', isNotBar, 1,
-                        screenWidth, isTablet),
-                    _buildNavButton('user_unselected.png', "Profile", 2,
-                        screenWidth, isTablet),
-                  ],
+            return PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isWide ? maxContentWidth : double.infinity,
+                    ),
+                    child: MatchScreen(),
+                  ),
                 ),
-              ),
-            )
-          ],
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isWide ? maxContentWidth : double.infinity,
+                    ),
+                    child: BarScreen(),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isWide ? maxContentWidth : double.infinity,
+                    ),
+                    child: ProfileScreen(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: Container(
+        color: background, // colore toute la zone, home indicator compris
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: navBarHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavButton('calendar_unselected.png', "Matches", 0,
+                    screenWidth, isTablet),
+                _buildNavButton(
+                    'beer_unselected.png', isNotBar, 1, screenWidth, isTablet),
+                _buildNavButton(
+                    'user_unselected.png', "Profile", 2, screenWidth, isTablet),
+              ],
+            ),
+          ),
         ),
       ),
     );

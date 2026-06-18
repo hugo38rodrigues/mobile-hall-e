@@ -1,78 +1,82 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:hall_e_mobile/components/identification/bar-information.dart';
-import 'package:hall_e_mobile/components/identification/client-information.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hall_e_mobile/components/identification/bar_information.dart';
+import 'package:hall_e_mobile/components/identification/client_information.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
 import 'package:hall_e_mobile/models/user-credentiels.model.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/providers/account.providers.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
+import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
-import 'package:provider/provider.dart';
 
-class InformationsSignUp extends StatefulWidget {
+class InformationsSignUp extends ConsumerStatefulWidget {
   final Function(int) goBack;
   final Function getStateProfile;
   final UserCredentiels credentiels;
-  InformationsSignUp(
-      {required this.credentiels,
-      required this.goBack,
-      required this.getStateProfile});
+
+  const InformationsSignUp({
+    super.key,
+    required this.credentiels,
+    required this.goBack,
+    required this.getStateProfile,
+  });
 
   @override
-  _InformationsSignUpState createState() => _InformationsSignUpState();
+  ConsumerState<InformationsSignUp> createState() => _InformationsSignUpState();
 }
 
-class _InformationsSignUpState extends State<InformationsSignUp> {
-
+class _InformationsSignUpState extends ConsumerState<InformationsSignUp> {
   Informations? informations;
+  bool _isLoading = false;
 
-  void getInformations(newInformations) {
+  void getInformations(Informations? newInformations) {
     setState(() {
       informations = newInformations;
     });
   }
 
-  Widget fieldsInformation(role) {
+  Widget fieldsInformation(String role) {
     switch (role) {
       case 'client':
         return ClientInformations(getInformations: getInformations);
-
       case 'bar':
-      return BarInformations(getInformation: getInformations);
-
+        return BarInformations(getInformation: getInformations);
       default:
-        return Text(
-          'Role non définis',
-          style: TextStyle(color: secondaryColor, fontSize: 15),
+        return const Text(
+          'Rôle non défini',
+          style: TextStyle(color: textGold, fontSize: 15),
         );
     }
   }
 
-  Future<void> sendSignUp(informations, credentiels) async {
+  Future<void> sendRegister(
+      Informations? informations, UserCredentiels credentiels) async {
+    final String token = ref.read(accountProvider).token;
+    final String? apiUrl = dotenv.env['API_URL'];
 
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      Response response = await dio
-          .post('$apiUrl/sign-up',
-              data: {
-                'email': credentiels.email,
-                'password': credentiels.password,
-                'role': credentiels.role,
-                'informations':informations
-              },
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
+      final Response response = await request(
+        data: {
+          'email': credentiels.email,
+          'password': credentiels.password,
+          'role': credentiels.role,
+          'informations': informations,
+        },
+        '$apiUrl/user/register',
+        'POST',
+        token: token,
+      ).timeout(
+        const Duration(seconds: 10),
         onTimeout: () {
-          // Gère le timeout en lançant une exception
           throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/sign-up'),
-            type: DioExceptionType
-                .connectionTimeout, // Utilisation de connectionTimeout pour gérer le timeout
+            requestOptions: RequestOptions(path: '$apiUrl/registe'),
+            type: DioExceptionType.connectionTimeout,
             message: 'Timeout',
           );
         },
@@ -86,50 +90,66 @@ class _InformationsSignUpState extends State<InformationsSignUp> {
         if (!mounted) return;
         await handleError(e, context);
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void onSubmit() {
-    sendSignUp(informations, widget.credentiels);
+    sendRegister(informations, widget.credentiels);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        return SingleChildScrollView(
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isTablet = screenWidth >= 600;
+    final double contentWidth = isTablet ? 400 : 320;
+
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: contentWidth),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               fieldsInformation(widget.credentiels.role),
-              SizedBox(
-                child: Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        widget.goBack(0);
-                      },
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: secondaryColor,
-                          foregroundColor: primaryColor),
-                      child: Text('Retour'),
-                    ),
-                    SizedBox(
-                      width: 50,
-                    ),
-                    ElevatedButton(
-                      onPressed: () => onSubmit(),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: secondaryColor,
-                          foregroundColor: primaryColor),
-                      child: Text('S\'inscrire'),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : () => widget.goBack(0),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: textGold, foregroundColor: background),
+                    child: const Text('Retour'),
+                  ),
+                  const SizedBox(width: 50),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : onSubmit,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: textGold, foregroundColor: background),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: background),
+                          )
+                        : const Text("S'inscrire"),
+                  ),
+                ],
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 
 class CustomLoader extends StatefulWidget {
   final String text;
@@ -18,8 +18,8 @@ class _CustomLoaderState extends State<CustomLoader> {
         children: [
           CircularProgressIndicator(
             valueColor:
-                AlwaysStoppedAnimation<Color>(Colors.brown), // Couleur marron
-            backgroundColor: Colors.brown.shade200, // Couleur beige clair
+                AlwaysStoppedAnimation<Color>(textGold), // Couleur marron
+            backgroundColor: textWhite, // Couleur beige clair
             strokeWidth: 4, // Épaisseur du cercle
           ),
           SizedBox(height: 16), // Espacement
@@ -28,7 +28,7 @@ class _CustomLoaderState extends State<CustomLoader> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: secondaryColor,
+              color: textGold,
             ),
           ),
         ],

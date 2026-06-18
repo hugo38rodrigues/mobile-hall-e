@@ -55,7 +55,8 @@
   <true/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-    <string>google.maps</string>
+        <string>mailto</string>
+        <string>google.maps</string>
 	</array>
 </dict>
 </plist>

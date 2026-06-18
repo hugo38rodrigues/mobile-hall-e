@@ -8,18 +8,18 @@ class IdendtificationWrapper extends StatefulWidget {
 }
 
 class _IdendtificationWrapperState extends State<IdendtificationWrapper> {
-  bool _IsConnectionUser = true;
+  bool _isConnectionUser = true;
 
   void getStateProfile() {
     setState(() {
-      _IsConnectionUser = !_IsConnectionUser;
+      _isConnectionUser = !_isConnectionUser;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Center(
-        child: _IsConnectionUser
+        child: _isConnectionUser
             ? Connexion(getStateProfile: getStateProfile)
             : SignUp(getStateProfile: getStateProfile));
   }

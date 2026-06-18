@@ -9,11 +9,11 @@ class UserCredentiels {
     required this.role,
   });
 
-  factory UserCredentiels.fromJson(Map<String, dynamic> json) {
+  factory UserCredentiels.fromJson(Map<String, dynamic> data) {
     return UserCredentiels(
-      email: json['email'] ?? '',
-      password: json['password'] ?? '',
-      role: json['role'] ?? '',
+      email: data['email'] ?? '',
+      password: data['password'] ?? '',
+      role: data['role'] ?? '',
     );
   }
 

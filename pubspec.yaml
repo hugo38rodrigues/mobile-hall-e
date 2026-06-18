@@ -29,6 +29,8 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   pdf: ^3.10.7
   printing: ^5.12.0
+  cached_network_image: ^3.4.0
+  hex: ^0.2.0
 
 dev_dependencies:
   flutter_test:
@@ -58,4 +60,5 @@ flutter:
     - assets/gameLogos/lol.png
     - assets/gameLogos/valorant.png
     - assets/gameLogos/cs.png
+    - assets/logo_hall_e.png
     - .env

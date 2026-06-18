@@ -4,353 +4,295 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/loader.component.dart';
-import 'package:hall_e_mobile/components/password/forgot-password.component.dart';
-import 'package:hall_e_mobile/models/user-factory.model.dart';
+import 'package:hall_e_mobile/components/password/forgot_password.component.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/constants.utils.dart';
-import 'package:hall_e_mobile/utils/contact-mail.dart';
+import 'package:hall_e_mobile/utils/contact_mail.dart';
+import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
+import 'package:hall_e_mobile/utils/snackbar.utils.dart';
 
 class Connexion extends ConsumerStatefulWidget {
-  final Function getStateProfile;
-  Connexion({required this.getStateProfile});
+  final VoidCallback getStateProfile;
+  const Connexion({super.key, required this.getStateProfile});
 
   @override
-  _ConnexionState createState() => _ConnexionState();
+  ConsumerState<Connexion> createState() => _ConnexionState();
 }
 
 class _ConnexionState extends ConsumerState<Connexion> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _isEmptyEmail = false;
   bool _isNotEmail = false;
   bool _isEmptyPassword = false;
-  String _errorEmptyFieldMessage = 'Ce champ est vide';
-  String _errorNotEmailMessage = 'Ce n\'est pas un email';
   bool _isLoading = false;
-
-  bool _verifyEmptyFiled(String value) {
-    if (value.isEmpty) {
-      return true;
-    }
-    return false;
-  }
-
-  bool _isValidEmail(String email) {
-    return regexEmail.hasMatch(email);
-  }
+  bool _obscurePassword = true;
 
   @override
-  void initState() {
-    super.initState();
-    _isEmptyEmail = false;
-    _isNotEmail = false;
-    _isEmptyPassword = false;
-    _isLoading = false;
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  bool _isValidFormData(String email, String password) {
-    bool isValidFormData = true;
-    bool emailIsEmpty = _verifyEmptyFiled(email);
-    bool passwordIsEmpty = _verifyEmptyFiled(password);
-    _isEmptyEmail = false;
-    _isNotEmail = false;
-    _isEmptyPassword = false;
+  bool _validate() {
+    final email = _emailController.text;
+    final password = _passwordController.text;
 
-    if (emailIsEmpty) {
-      _isEmptyEmail = true;
-      isValidFormData = false;
-    }
-
-    if (passwordIsEmpty) {
-      _isEmptyPassword = true;
-      isValidFormData = false;
-    }
-
-    bool isEmail = _isValidEmail(email);
-
-    if (!isEmail) {
-      _isNotEmail = true;
-      isValidFormData = false;
-    }
-    return isValidFormData;
-  }
-
-  Future<void> getConnexion(ref, email, password) async {
     setState(() {
-      _isLoading = false;
+      _isEmptyEmail = email.isEmpty;
+      _isNotEmail = email.isNotEmpty && !regexEmail.hasMatch(email);
+      _isEmptyPassword = password.isEmpty;
     });
 
-    String? apiUrl = dotenv.env['API_URL'];
-    Dio dio = Dio();
+    return !_isEmptyEmail && !_isNotEmail && !_isEmptyPassword;
+  }
+
+  Future<void> _login() async {
+    if (!_validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final apiUrl = dotenv.env['API_URL'];
 
     try {
-      Response response = await dio
-          .post('$apiUrl/connexion',
-              data: {"email": email, "password": password},
-              options: Options(
-                headers: {"Content-Type": "application/json"},
-              ))
-          .timeout(
-        Duration(seconds: 10),
-        onTimeout: () {
-          _isLoading = false;
-          // Gère le timeout en lançant une exception
-          throw DioException(
-            requestOptions: RequestOptions(path: '$apiUrl/connexion'),
-            type: DioExceptionType.connectionTimeout,
-            message: 'Timeout',
-          );
+      final loginResponse = await request(
+        data: {
+          'email': _emailController.text,
+          'password': _passwordController.text
         },
-      );
+        '$apiUrl/connexion',
+        'POST',
+      ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final token = response.headers.value('Authorization');
-        Map<String, dynamic> data = {'token': token, ...response.data};
-        User user = UserFactory.createFromMap(data);
+      if (loginResponse.statusCode != 200) return;
 
+      final token = loginResponse.headers.value('Authorization');
+      if (token == null) return;
+
+      final profileResponse = await request(
+        '$apiUrl/user',
+        'GET',
+        token: token,
+      ).timeout(const Duration(seconds: 10));
+
+      if (profileResponse.statusCode == 200) {
+        final user = User.fromMap({'token': token, ...profileResponse.data});
         ref.read(accountProvider.notifier).setAccount(user);
-        setState(() {
-          _isLoading = false;
-        });
       }
-    } catch (e) {
-      if (e is DioException) {
-        if (!mounted) return;
-
-        await handleError(e, context);
-      }
+    } on DioException catch (e) {
+      if (mounted) await handleError(e, context);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _submitText(WidgetRef ref) {
-    setState(
-      () {
-        String email = _emailController
-            .text; // Récupération de la valeur du champ de texte
-        String password = _passwordController.text;
+  Future<void> _openForgotPassword() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ForgotPassword()),
+    );
+    if (result != null && mounted) {
+      showSuccessSnackBar(context, result);
+    }
+  }
 
-        bool isValidFormData = _isValidFormData(email, password);
-        if (isValidFormData) {
-          getConnexion(ref, email, password);
+  InputDecoration _inputDecoration({String? errorText, Widget? suffixIcon}) {
+    const radius = BorderRadius.all(Radius.circular(20));
+    return InputDecoration(
+      errorText: errorText,
+      suffixIcon: suffixIcon,
+      errorStyle: const TextStyle(color: Colors.red, fontSize: 14),
+      border: OutlineInputBorder(
+          borderRadius: radius, borderSide: const BorderSide(color: textGold)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: textGold, width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: Colors.red, width: 2)),
+      focusedErrorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: const BorderSide(color: Colors.red, width: 2)),
+    );
+  }
 
-          _isEmptyPassword = false;
-          _isEmptyEmail = false;
-        }
-      },
+  Widget _buildField({
+    required IconData icon,
+    required String label,
+    required TextEditingController controller,
+    bool hasError = false,
+    String? errorText,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    Widget? suffixIcon,
+  }) {
+    final color = hasError ? Colors.red : textGold;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: color)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          style: const TextStyle(color: textWhite),
+          controller: controller,
+          cursorColor: textGold,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          decoration: _inputDecoration(
+            errorText: errorText,
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isErrorEmail = _isEmptyEmail || _isNotEmail;
-    String? errorMessageEmail = _isEmptyEmail
-        ? _errorEmptyFieldMessage
-        : _isNotEmail
-            ? _errorNotEmailMessage
-            : null;
-    return Consumer(
-      builder: (context, ref, child) {
-        return Column(
-          children: [
-            SizedBox(height: 40),
-            Text(
-              "Bon retour parmi nous !",
-              style: TextStyle(color: secondaryColor, fontSize: 24),
-            ),
-            SizedBox(height: 40),
-            Text(
-              "Connexion",
-              style: TextStyle(color: secondaryColor, fontSize: 16),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-                width: 250,
-                height: 120,
-                child: Column(children: [
-                  Row(children: [
-                    Icon(Icons.person,
-                        color: isErrorEmail ? Colors.red : secondaryColor),
-                    Text('Votre email',
-                        style: TextStyle(
-                            color: isErrorEmail ? Colors.red : secondaryColor))
-                  ]),
-                  TextField(
-                    controller: _emailController,
-                    cursorColor: secondaryColor,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: secondaryColor)),
-                      errorText: errorMessageEmail,
-                      errorStyle: TextStyle(
-                          color: Colors.red,
-                          fontSize: 14), // Couleur du texte d'erreur
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: secondaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(
-                            color: Colors.red,
-                            width: 2), // Bordure rouge en cas d'erreur
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(
-                            color: Colors.red,
-                            width:
-                                2), // Bordure accentuée en cas d'erreur et focus
-                      ),
-                    ),
-                  ),
-                ])),
-            SizedBox(
-              width: 250,
-              height: _isEmptyPassword ? 120 : 90,
-              child: Column(
-                children: [
-                  Row(children: [
-                    Icon(Icons.person,
-                        color: _isEmptyPassword ? Colors.red : secondaryColor),
-                    Text('Votre password',
-                        style: TextStyle(
-                            color: _isEmptyPassword
-                                ? Colors.red
-                                : secondaryColor)),
-                  ]),
-                  TextField(
-                    obscureText: true,
-                    controller: _passwordController,
-                    cursorColor: secondaryColor,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          borderSide: BorderSide(color: secondaryColor)),
-                      errorText:
-                          _isEmptyPassword ? _errorEmptyFieldMessage : null,
-                      errorStyle: TextStyle(
-                          color: Colors.red,
-                          fontSize: 14), // Couleur du texte d'erreur
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(color: secondaryColor, width: 2),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(
-                            color: Colors.red,
-                            width: 2), // Bordure rouge en cas d'erreur
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        borderSide: BorderSide(
-                            color: Colors.redAccent,
-                            width:
-                                2), // Bordure accentuée en cas d'erreur et focus
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(right: 70, top: 2),
-              child: RichText(
-                text: TextSpan(
-                  text: "Mot de passe oublié ?",
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ForgotPassword(),
-                        ),
-                      );
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+    final contentWidth = isTablet ? 420.0 : 300.0;
 
-                      if (result != null) {
-                        // Gérer le retour, par exemple afficher un SnackBar
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
+    final isErrorEmail = _isEmptyEmail || _isNotEmail;
+    final errorEmail = _isEmptyEmail
+        ? 'Ce champ est vide'
+        : _isNotEmail
+            ? 'Ce n\'est pas un email'
+            : null;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: contentWidth),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              const Text(
+                "Connexion",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: textGold, fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+
+              // Email
+              _buildField(
+                icon: Icons.person,
+                label: 'Votre email',
+                controller: _emailController,
+                hasError: isErrorEmail,
+                errorText: errorEmail,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 10),
+
+              // Password
+              _buildField(
+                icon: Icons.lock,
+                label: 'Votre mot de passe',
+                controller: _passwordController,
+                hasError: _isEmptyPassword,
+                errorText: _isEmptyPassword ? 'Ce champ est vide' : null,
+                obscureText: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: textGold,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-            ),
-            Container(
-              margin: EdgeInsets.only(top: 40, bottom: 20),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 14, color: secondaryColor),
-                  children: [
-                    TextSpan(text: "Vous n'avez pas de compte ? "),
-                    TextSpan(
-                      text: "M'inscrire",
+
+              // Mot de passe oublié (aligné à droite, sous le champ)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: GestureDetector(
+                    onTap: _openForgotPassword,
+                    child: const Text(
+                      "Mot de passe oublié ?",
                       style: TextStyle(
-                          color: secondaryColor,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.bold),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          widget.getStateProfile();
-                        },
+                          color: textGold, fontWeight: FontWeight.bold),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              width: 350,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    backgroundColor: secondaryColor),
-                onPressed: () => _submitText(ref), // Passe `ref` ici
-                child: _isLoading
-                    ? CustomLoader(text: 'Connection')
-                    : Text(
-                        "Me connecter",
-                        style: TextStyle(fontSize: 20),
+
+              // Inscription
+              Padding(
+                padding: const EdgeInsets.only(top: 40, bottom: 20),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 14, color: textGold),
+                    children: [
+                      const TextSpan(text: "Vous n'avez pas de compte ? "),
+                      TextSpan(
+                        text: "M'inscrire",
+                        style: const TextStyle(
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold,
+                            color: textGold),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = widget.getStateProfile,
                       ),
-              ),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              margin: EdgeInsets.only(top: 10, bottom: 20),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(fontSize: 14, color: secondaryColor),
-                  children: [
-                    TextSpan(text: "Un problème ? "),
-                    TextSpan(
-                      text: "Contactez nous",
-                      style: TextStyle(
-                          color: secondaryColor,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.bold),
-                      recognizer: TapGestureRecognizer()..onTap = launchEmail,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+
+              // Bouton connexion
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    foregroundColor: background, backgroundColor: textGold),
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading
+                    ? CustomLoader(text: 'Connexion')
+                    : const Text("Me connecter",
+                        style: TextStyle(fontSize: 20)),
+              ),
+
+              // Contact
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 20),
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 14, color: textGold),
+                    children: [
+                      const TextSpan(text: "Un problème ? "),
+                      TextSpan(
+                        text: "Contactez nous",
+                        style: const TextStyle(
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold,
+                            color: textGold),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => launchEmail(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -11,12 +11,12 @@ class Team {
     required this.logoUrl,
   });
 
-  factory Team.fromJson(Map<String, dynamic> map) {
+  factory Team.fromJson(Map<String, dynamic> data) {
     return Team(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      acronym: map['acronym'] ?? '',
-      logoUrl: map['logoUrl'] ?? '',
+      id: data['id'] ?? '',
+      name: data['name'] ?? '',
+      acronym: data['acronym'] ?? '',
+      logoUrl: data['logoUrl'] ?? '',
     );
   }
 

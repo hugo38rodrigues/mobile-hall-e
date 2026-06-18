@@ -9,11 +9,11 @@ class Location {
     required this.longitude,
   });
 
-  factory Location.fromJson(Map<String, dynamic> map) {
+  factory Location.fromJson(Map<String, dynamic> data) {
     return Location(
-      isActivated: map['isActivated'] ?? false,
-      latitude: (map['latitude'] as num).toDouble(),
-      longitude: (map['longitude'] as num).toDouble(),
+      isActivated: data['isActivated'] ?? false,
+      latitude: (data['latitude'] as num).toDouble(),
+      longitude: (data['longitude'] as num).toDouble(),
     );
   }
 

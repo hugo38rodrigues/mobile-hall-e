@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:intl/intl.dart';
 
-import '../styles/font-colors.dart';
+
 
 class HorizontalCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;
@@ -53,16 +54,9 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                 width: 95,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: isSelected ? secondaryColor : primaryColor,
+                  color: isSelected ? textGold : background,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: secondaryColor),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected ? secondaryColor : Colors.grey,
-                      blurRadius: 5,
-                      spreadRadius: 1,
-                    ),
-                  ],
+                  border: Border.all(color:isSelected ? textGold: textGrey),
                 ),
                 child: Center(
                   child: Text(
@@ -70,7 +64,7 @@ class _HorizontalCalendarState extends State<HorizontalCalendar> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? primaryColor : secondaryColor,
+                      color: isSelected ? background : textGrey,
                     ),
                   ),
                 ),

@@ -19,14 +19,14 @@ class Informations {
     this.pictures,
   });
 
-  factory Informations.fromJson(Map<String, dynamic> json) {
+  factory Informations.fromJson(Map<String, dynamic> data) {
     return Informations(
-      firstName: json['firstName']?? 'guest',
-      lastName: json['lastName'],
-      name: json['name'],
-      description: json['description'],
-      address: json['address'],
-      pictures: json['pictures'],
+      firstName: data['firstName']?? 'guest',
+      lastName: data['lastName'],
+      name: data['name'],
+      description: data['description'],
+      address: data['address'],
+      pictures: data['pictures'],
     );
   }
 

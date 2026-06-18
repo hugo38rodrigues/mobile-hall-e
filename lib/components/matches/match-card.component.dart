@@ -1,308 +1,369 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:hall_e_mobile/components/matches/matchDetailsPage.component.dart';
+import 'package:hall_e_mobile/components/matches/match_details_page.component.dart';
 import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
+import 'package:hall_e_mobile/models/game.model.dart';
+import 'package:hall_e_mobile/models/league.model.dart';
 import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/format-stream-url.utils.dart';
 import 'package:intl/intl.dart';
 
 class MatchCard extends ConsumerStatefulWidget {
-  final String role;
-  final String idMatch;
-  final List<String> streamPlatform;
-  final int hypeScore;
-  final Team team1;
-  final Team team2;
-  final List<BarMinimalInformations>? programmed;
-  final String leagueName;
-  final String gameName;
-  final String date;
-  final Function getIdMatch;
-
   const MatchCard({
+    super.key,
     required this.role,
     required this.hypeScore,
     required this.idMatch,
     required this.streamPlatform,
     required this.team1,
     required this.team2,
+    required this.numberOfGame,
     required this.programmed,
-    required this.leagueName,
-    required this.gameName,
+    required this.league,
+    required this.game,
     required this.date,
     required this.getIdMatch,
-    super.key,
   });
+
+  final String role;
+  final String idMatch;
+  final String numberOfGame;
+  final List<String> streamPlatform;
+  final int hypeScore;
+  final Team team1;
+  final Team team2;
+  final List<BarMinimalInformations>? programmed;
+  final League league;
+  final Game game;
+  final String date;
+  final Function getIdMatch;
+
   @override
-  _MatchCardState createState() => _MatchCardState();
+  ConsumerState<MatchCard> createState() => _MatchCardState();
 }
 
 class _MatchCardState extends ConsumerState<MatchCard> {
-  String formatTime(String date) {
-    // Forcer le parsing en UTC
-    DateTime dateTime = DateTime.parse(date).toLocal();
-
-    // Formatter l'heure sans conversion locale
-    String formattedTime = DateFormat("HH'h'mm").format(dateTime);
-    return formattedTime;
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+  bool? _programmedOverride;
+  String _formatTime(String date) {
+    return DateFormat("HH'h'mm").format(DateTime.parse(date).toLocal());
   }
 
-  bool checkedMatchIsProgrammedWithBar(
-      List<BarMinimalInformations> programedMatch) {
-    User userLogin = ref.watch(accountProvider);
-
-    return programedMatch.any(
-        (programmerBar) => programmerBar.name == userLogin.informations.name);
+  bool _isMatchProgrammedWithBar(List<BarMinimalInformations> programmed) {
+    final User user = ref.watch(accountProvider);
+    return programmed.any((bar) => bar.name == user.informations.name);
   }
 
+  void _openDetails() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MatchDetailsPage(
+          date: widget.date,
+          game: widget.game,
+          numberOfGame: widget.numberOfGame,
+          league: widget.league,
+          team1: widget.team1,
+          team2: widget.team2,
+          barList: widget.programmed ?? [],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build helpers
+  // ---------------------------------------------------------------------------
+
+  /// Logo d'équipe avec placeholder shimmer, cache et fallback.
+  Widget _buildTeamLogo(String logoUrl) {
+    const fallback = Icon(FontAwesomeIcons.notdef, color: textGold, size: 45);
+
+    if (logoUrl.isEmpty) return fallback;
+
+    return CachedNetworkImage(
+      imageUrl: logoUrl,
+      width: 50,
+      height: 50,
+      fit: BoxFit.contain,
+      httpHeaders: const {
+        'User-Agent': 'Mozilla/5.0',
+        'Referer': 'https://cdn-api.pandascore.co/',
+      },
+      // Affiché immédiatement pendant le téléchargement
+      placeholder: (_, __) => const SizedBox(
+        width: 50,
+        height: 50,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: textGold,
+          ),
+        ),
+      ),
+      // Fallback si l'URL est inaccessible
+      errorWidget: (_, __, ___) => fallback,
+    );
+  }
+
+  /// Ligne logo + nom d'une équipe.
+  Widget _buildTeamRow(Team team) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const SizedBox(width: 40),
+        CircleAvatar(
+            radius: 35,
+            backgroundColor: textWhite,
+            child: _buildTeamLogo(team.logoUrl)),
+        const SizedBox(width: 55),
+        Expanded(
+          child: Text(
+            team.name,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 16,
+              color: textWhite,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bandeau supérieur : nom du jeu + heure.
+  Widget _buildGameHeader(String hours) {
+    return Container(
+      decoration: const BoxDecoration(color: bgCard),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            widget.game.name.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 18,
+              color: textWhite,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: btnBg50Gold,
+              border: Border.all(color: borderGold50),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(hours, style: const TextStyle(color: textGold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bandeau ligue + bouton/texte de programmation.
+  Widget _buildLeagueRow(bool matchIsProgrammed) {
+    // si on a appuyé localement, on prend cette valeur en priorité
+    final isProgrammed = _programmedOverride ?? matchIsProgrammed;
+
+    return Container(
+      decoration: const BoxDecoration(color: bgCard),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              widget.league.name.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: textGold,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (widget.role == 'bar')
+            IconButton(
+              onPressed: isProgrammed
+                  ? null
+                  : () {
+                      widget.getIdMatch(widget.idMatch);
+                      setState(() => _programmedOverride = true);
+                    },
+              // couleur quand actif
+              color: textGold,
+              // couleur quand désactivé (sinon gris invisible)
+              disabledColor: textGold,
+              icon: isProgrammed
+                  ? Text(
+                      "Match programmé",
+                      style: TextStyle(color: textGold),
+                    )
+                  : Icon(Icons.add_circle),
+            )
+          else if (widget.programmed != null)
+            const Text(
+              'Match programmé',
+              style: TextStyle(
+                color: textGold,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Bandeau plateformes de streaming + hype score.
+  Widget _buildStreamRow() {
+    final hasStream = widget.streamPlatform.isNotEmpty;
+
+    return Container(
+      decoration: const BoxDecoration(color: bgCard),
+      padding: const EdgeInsets.only(right: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (hasStream)
+            ...widget.streamPlatform.map(
+              (url) => Padding(
+                padding: const EdgeInsetsDirectional.only(start: 10),
+                child: Text(getStreamName(url),
+                    style: const TextStyle(color: textGrey)),
+              ),
+            )
+          else
+            const Padding(
+              padding: EdgeInsetsDirectional.only(start: 10),
+              child: Text(
+                'Aucune information sur la diffusion',
+                style: TextStyle(color: textGold),
+              ),
+            ),
+          Row(
+            children: List.generate(
+              widget.hypeScore.clamp(0, 3),
+              (_) => const Icon(FontAwesomeIcons.fire, color: textGold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    String hours = formatTime(widget.date);
-    bool hasStreamPlatform = widget.streamPlatform.isNotEmpty;
+    final hours = _formatTime(widget.date);
+    final matchIsProgrammed = widget.programmed != null
+        ? _isMatchProgrammedWithBar(widget.programmed!)
+        : false;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Material(
-        color: Colors.transparent,
+        color: background,
         borderRadius: BorderRadius.circular(1),
         child: InkWell(
           borderRadius: BorderRadius.circular(1),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MatchDetailsPage(
-                  date: widget.date,
-                  gameName: widget.gameName,
-                  leagueName: widget.leagueName,
-                  team1: widget.team1,
-                  team2: widget.team2,
-                  barList: widget.programmed ?? [],
-                ),
-              ),
-            );
-          },
-          splashColor: secondaryColor,
-          highlightColor: Color.fromRGBO(255, 255, 255, 0.1),
+          onTap: _openDetails,
+          splashColor: textGold,
+          highlightColor: const Color.fromRGBO(255, 255, 255, 0.1),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            padding: EdgeInsets.all(5),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromRGBO(0, 0, 0, 0.1),
-                  blurRadius: 2,
-                  offset: Offset(0, 2),
-                ),
-              ],
             ),
             child: Card(
               shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: secondaryColor, // Couleur de la bordure
-                  width: 1.0, // Épaisseur de la bordure
-                ),
+                side: const BorderSide(color: textGold, width: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
-              elevation:
-                  6, // Augmente légèrement l'élévation pour une meilleure ombre
-              shadowColor: Color.fromRGBO(0, 0, 0, 0.2), // Ombre douce
-              color: Colors.white, // Fond de la carte
+              elevation: 6,
+              shadowColor: const Color.fromRGBO(0, 0, 0, 2),
+              color: bgCard,
               child: Padding(
-                padding: EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Ligne supérieure : Nom de la ligue + Heure
+                    _buildGameHeader(hours),
+                    _buildLeagueRow(matchIsProgrammed),
+                    _buildStreamRow(),
+                    const SizedBox(height: 12),
+                    Divider(thickness: 0.0, color: textGold),
+                    // Équipes
                     Container(
-                      decoration: BoxDecoration(color: primaryColor75),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            left: 12, right: 12, top: 12, bottom: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              widget.gameName,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: secondaryColor,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: secondaryColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                hours,
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // League + "Match programmer + add programmation"
-                    Container(
-                      decoration: BoxDecoration(color: primaryColor50),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            left: 12, right: 12, top: 12, bottom: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                widget.leagueName.toUpperCase(),
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    color: secondaryColor,
-                                    fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (widget.role == 'bar')
-                              IconButton(
-                                onPressed: (widget.programmed != null &&
-                                        !checkedMatchIsProgrammedWithBar(
-                                            widget.programmed!))
-                                    ? () => widget.getIdMatch(widget.idMatch)
-                                    : null,
-                                color: secondaryColor,
-                                icon: Icon(
-                                  (widget.programmed != null &&
-                                          checkedMatchIsProgrammedWithBar(
-                                              widget.programmed!))
-                                      ? Icons.close
-                                      : Icons.add_circle,
-                                ),
-                              )
-                            else if (widget.programmed != null &&
-                                widget.programmed!.isNotEmpty)
-                              Text(
-                                "Match programmé",
-                                style: TextStyle(
-                                    color: secondaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                              )
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    Container(
-                      decoration: BoxDecoration(color: primaryColor50),
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 12, bottom: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (hasStreamPlatform)
-                              ...widget.streamPlatform.map((streamUrl) =>
-                                  Padding(
-                                    padding: EdgeInsetsGeometry.only(left: 10),
-                                    child: Text(
-                                      getStreamName(streamUrl),
-                                      style: TextStyle(color: secondaryColor),
-                                    ),
-                                  )),
-                            if (!hasStreamPlatform)
-                              Padding(
-                                padding: EdgeInsetsGeometry.only(left: 10),
-                                child: Text(
-                                  "Match pas diffusé",
-                                  style: TextStyle(color: secondaryColor),
-                                ),
-                              ),
-                            Row(
-                              children: List.generate(
-                                widget.hypeScore.clamp(0, 3),
-                                (index) => Icon(
-                                  FontAwesomeIcons.fire,
-                                  color: secondaryColor,
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Bloc des équipes centré
-                    Container(
-                      alignment: Alignment.center, // Centre verticalement
-                      decoration: BoxDecoration(color: Colors.white),
+                      alignment: Alignment.center,
+                      color: bgCard,
                       child: Column(
                         children: [
+                          const SizedBox(height: 6),
+                          const SizedBox(height: 6),
+                          _buildTeamRow(widget.team1),
                           Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                SizedBox(width: 40),
-                                widget.team1.logoUrl.isNotEmpty
-                                    ? Image.network(
-                                        widget.team1.logoUrl,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.contain,
-                                      )
-                                    : Icon(FontAwesomeIcons.notdef,
-                                        color: secondaryColor, size: 45),
-                                SizedBox(width: 55),
-                                Expanded(
-                                  child: Text(
-                                    widget.team1.name,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        color: secondaryColor,
-                                        fontWeight: FontWeight.bold),
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        textGold.withAlpha(
+                                            0), // transparent au début
+                                        textGold, // plein près du VS
+                                      ],
+                                    ),
                                   ),
-                                )
-                              ]),
-                          SizedBox(height: 6),
-                          Divider(color: Colors.brown.shade200, thickness: 1),
-                          SizedBox(height: 6),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                SizedBox(width: 40),
-                                widget.team2.logoUrl.isNotEmpty
-                                    ? Image.network(
-                                        widget.team2.logoUrl,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Icon(FontAwesomeIcons.notdef,
-                                        size: 45, color: secondaryColor),
-                                SizedBox(width: 55),
-                                Expanded(
-                                    child: (Text(
-                                  widget.team2.name,
-                                  maxLines: 4,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: secondaryColor,
-                                      fontWeight: FontWeight.bold),
-                                )))
-                              ])
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  "VS",
+                                  style:
+                                      TextStyle(color: textGold, fontSize: 25),
+                                ),
+                              ),
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        textGold, // plein près du VS
+                                        textGold.withAlpha(
+                                            0), // transparent à la fin
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          _buildTeamRow(widget.team2),
+                          const SizedBox(height: 6),
+                          const SizedBox(height: 6),
+                          const SizedBox(height: 6),
                         ],
                       ),
                     ),

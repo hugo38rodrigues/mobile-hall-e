@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/components/identification/identification-wrapper.logins.dart';
 import 'package:hall_e_mobile/components/profiles/profile.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   @override
@@ -17,7 +17,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     String role = profile.role;
 
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: background,
       body: SingleChildScrollView(
         child: Column(
           children: [role == 'guest' ? IdendtificationWrapper() : Profile()],

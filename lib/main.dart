@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
-import 'package:hall_e_mobile/screen/landing-page.dart';
-import 'package:hall_e_mobile/styles/font-colors.dart';
+import 'package:hall_e_mobile/screen/landing_page.dart';
+import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Ajoutez cette importation
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding
@@ -28,8 +27,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addObserver(this); // Ajoutez l'observateur du cycle de vie
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -58,11 +56,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Ezone',
+      title: 'Hall Esport',
       theme: ThemeData(
         textTheme: textThemes,
       ),
-      home: LandingPage(), 
+      home: LandingPage(),
     );
   }
 }
