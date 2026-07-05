@@ -68,7 +68,7 @@ class _InformationsSignUpState extends ConsumerState<InformationsSignUp> {
           'role': credentiels.role,
           'informations': informations,
         },
-        '$apiUrl/user/register',
+        '$apiUrl/auth/register',
         'POST',
         token: token,
       ).timeout(

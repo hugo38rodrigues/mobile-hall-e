@@ -65,7 +65,7 @@ class _ConnexionState extends ConsumerState<Connexion> {
           'email': _emailController.text,
           'password': _passwordController.text
         },
-        '$apiUrl/connexion',
+        '$apiUrl/auth/connexion',
         'POST',
       ).timeout(const Duration(seconds: 10));
 
