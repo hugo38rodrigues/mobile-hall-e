@@ -43,8 +43,8 @@ et de **profiter des parties** tout en dégustant leurs boissons préférées.
 
 - **Flutter** (Dart)
 - Consommation de l'**API Hall-E** via REST (`http` / `dio`)
-- Gestion d'état : Provider / Riverpod / Bloc *(à préciser)*
-- Géolocalisation : `geolocator` + `google_maps_flutter` *(à préciser)*
+- Gestion d'état : Provider / Riverpod / Bloc
+- Géolocalisation : `geolocator` + `google_maps_flutter`
 
 ### ✅ Prérequis
 
