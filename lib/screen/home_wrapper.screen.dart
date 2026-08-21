@@ -8,7 +8,6 @@ import 'package:hall_e_mobile/styles/font_colors.dart';
 
 import '../components/my_app_bar.component.dart';
 
-
 class HomeWrapperScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<HomeWrapperScreen> createState() => _HomeWrapperScreenState();
@@ -67,6 +66,7 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
+                            textScaler: TextScaler.noScaling,
                             style: TextStyle(
                               color: textGold,
                               fontWeight: FontWeight.bold,
@@ -95,6 +95,7 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
+                        textScaler: TextScaler.noScaling,
                         style: TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.bold,
@@ -120,7 +121,7 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
     return Scaffold(
       appBar: MyAppBar(),
       body: SafeArea(
-        bottom: false, // le bas est géré par bottomNavigationBar
+        bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isWide = constraints.maxWidth > 600;
@@ -167,7 +168,7 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        color: background, // colore toute la zone, home indicator compris
+        color: background,
         child: SafeArea(
           top: false,
           child: SizedBox(

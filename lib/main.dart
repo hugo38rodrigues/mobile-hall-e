@@ -8,8 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Assurez-vous que Flutter est bien initialisé
+  WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
   await dotenv.load(fileName: ".env");
   final container = ProviderContainer();
@@ -32,7 +31,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // Retirer l'observateur
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -40,7 +39,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Si l'application passe en arrière-plan ou se ferme
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _clearUserData();
@@ -49,7 +47,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   void _clearUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.remove('user'); // Effacer les données de l'utilisateur
+    prefs.remove('user');
   }
 
   @override
@@ -58,8 +56,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       title: 'Hall Esport',
       theme: ThemeData(
+        fontFamily: 'Lexend',
         textTheme: textThemes,
+        scaffoldBackgroundColor: background,
       ),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.noScaling,
+          ),
+          child: child!,
+        );
+      },
       home: LandingPage(),
     );
   }
