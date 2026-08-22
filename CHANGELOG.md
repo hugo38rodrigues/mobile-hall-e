@@ -1,12 +1,21 @@
 # Changelog
 
+All notable changes to this project are documented in this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Fixed
+- [HE-17](https://xwdrblue.atlassian.net/browse/HE-17) — *Fix for bar account creation*
+
 ## [1.0.0] -- 2025-02-21
-### 🚀 First Version
+
+### Added
 - Application deployment with basic functionality
-  - Displayed matches
-  - Filter matches with categories games, leagues, teams
-  - Filter matches with favorites
-  - Create a user account or bar
-  - Add favorites
-  - View bar list with their schedules
-  - Find a bar on the map  
+- Match display
+- Filter matches by category: games, leagues, teams
+- Filter matches by favorites
+- User and bar account creation
+- Add favorites
+- Bar list with opening hours
+- Find a bar on the map
