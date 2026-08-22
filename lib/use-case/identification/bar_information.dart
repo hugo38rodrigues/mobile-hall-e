@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
-import 'package:image_picker/image_picker.dart';
 
 class BarInformations extends StatefulWidget {
   final Function getInformation;
@@ -130,7 +127,6 @@ class _BarInformationsState extends State<BarInformations> {
                   ],
                 ),
               ),
-
               SizedBox(
                 width: 250,
                 height: 100,

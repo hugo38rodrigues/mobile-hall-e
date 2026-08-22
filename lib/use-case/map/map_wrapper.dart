@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/map/client_map.dart';
+import 'package:hall_e_mobile/use-case/map/client_map.dart';
 import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/favoris.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';

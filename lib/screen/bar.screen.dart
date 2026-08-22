@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/bars-screen/bar-list.component.dart';
-import 'package:hall_e_mobile/components/bars-screen/programation-match-list.component.dart';
+import 'package:hall_e_mobile/use-case/bars-screen/bar-list.component.dart';
+import 'package:hall_e_mobile/use-case/bars-screen/programation-match-list.component.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 
 class BarScreen extends ConsumerStatefulWidget {

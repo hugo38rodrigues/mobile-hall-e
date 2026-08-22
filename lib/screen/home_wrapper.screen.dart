@@ -5,8 +5,7 @@ import 'package:hall_e_mobile/screen/bar.screen.dart';
 import 'package:hall_e_mobile/screen/match.screen.dart';
 import 'package:hall_e_mobile/screen/profile.screen.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
-
-import '../components/my_app_bar.component.dart';
+import '../use-case/my_app_bar.component.dart';
 
 class HomeWrapperScreen extends ConsumerStatefulWidget {
   @override

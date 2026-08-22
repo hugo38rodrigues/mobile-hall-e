@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../components/calendar.component.dart';
-import '../components/filters.component.dart';
-import '../components/matches/match_list.component.dart';
+import '../use-case/calendar.component.dart';
+import '../use-case/filters.component.dart';
+import '../use-case/matches/match_list.component.dart';
 
 class MatchScreen extends StatefulWidget {
   const MatchScreen({super.key});

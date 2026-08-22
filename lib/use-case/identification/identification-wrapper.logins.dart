@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/components/identification/connexion.logins.dart';
-import 'package:hall_e_mobile/components/identification/sign-up/sign-up-wrapper.component.dart';
+import 'package:hall_e_mobile/use-case/identification/connexion.logins.dart';
+import 'package:hall_e_mobile/use-case/identification/sign-up/sign-up-wrapper.component.dart';
+
 
 class IdendtificationWrapper extends StatefulWidget {
   @override
@@ -10,7 +11,7 @@ class IdendtificationWrapper extends StatefulWidget {
 class _IdendtificationWrapperState extends State<IdendtificationWrapper> {
   bool _isConnectionUser = true;
 
-  void getStateProfile() {
+  void getStateSession() {
     setState(() {
       _isConnectionUser = !_isConnectionUser;
     });
@@ -20,7 +21,7 @@ class _IdendtificationWrapperState extends State<IdendtificationWrapper> {
   Widget build(BuildContext context) {
     return Center(
         child: _isConnectionUser
-            ? Connexion(getStateProfile: getStateProfile)
-            : SignUp(getStateProfile: getStateProfile));
+            ? Connexion(getStateSession: getStateSession)
+            : SignUp(getStateSession: getStateSession));
   }
 }

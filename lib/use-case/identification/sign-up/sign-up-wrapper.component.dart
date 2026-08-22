@@ -1,13 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/components/identification/sign-up/credentiels-sign-up.component.dart';
-import 'package:hall_e_mobile/components/identification/sign-up/informations-sign-up.component.dart';
 import 'package:hall_e_mobile/models/user-credentiels.model.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
+import 'package:hall_e_mobile/use-case/identification/sign-up/credentiels-sign-up.component.dart';
+import 'package:hall_e_mobile/use-case/identification/sign-up/informations-sign-up.component.dart';
 
 class SignUp extends StatefulWidget {
-  final Function() getStateProfile;
-  SignUp({required this.getStateProfile});
+  final Function() getStateSession;
+  SignUp({required this.getStateSession});
   @override
   _SignUpState createState() => _SignUpState();
 }
@@ -35,7 +35,7 @@ class _SignUpState extends State<SignUp> {
         return InformationsSignUp(
             goBack: manageState,
             credentiels: newCredentiels,
-            getStateProfile: widget.getStateProfile);
+            getStateSession: widget.getStateSession);
       default:
         return CredentielsSignUp(
             getCredentiels: getCredentiels,
@@ -49,25 +49,29 @@ class _SignUpState extends State<SignUp> {
     return Column(
       children: [
         signUpStep(state),
-        Text.rich(
-          TextSpan(
-            text: "Vous avez déjà un compte ?",
-            style: TextStyle(fontSize: 14, color: textGold),
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: const TextStyle(fontSize: 14, color: textGold),
             children: [
+              const TextSpan(text: "Vous avez déjà un compte ? "),
               TextSpan(
-                text: " Se connecter",
-                style: TextStyle(
-                  color: textGold,
-                  decoration: TextDecoration.underline,
-                ),
+                text: "Connexion",
+                style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.bold,
+                    color: textGold),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
-                    widget.getStateProfile();
+                    widget.getStateSession();
                   },
               ),
             ],
           ),
         ),
+        SizedBox(
+          height: 10,
+        )
       ],
     );
   }

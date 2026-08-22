@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hall_e_mobile/components/label-text.dart';
 import 'package:hall_e_mobile/models/user-credentiels.model.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
-import 'package:hall_e_mobile/utils/constants.utils.dart';
-
-// ---------------------------------------------------------------------------
-// Model helper – groups an error flag and its message
-// ---------------------------------------------------------------------------
-typedef FieldError = ({bool hasError, String? message});
-
-const FieldError _noError = (hasError: false, message: null);
-FieldError _errorOf(String msg) => (hasError: true, message: msg);
+import 'package:hall_e_mobile/utils/validator.utils.dart';
 
 // ---------------------------------------------------------------------------
 // Widget
@@ -36,17 +29,10 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
   late final TextEditingController _passwordController;
   late final TextEditingController _confirmPasswordController;
 
-  // Field errors
-  FieldError _emailError = _noError;
-  FieldError _passwordError = _noError;
-  FieldError _confirmPasswordError = _noError;
-
-  // Password-strength flags
-  bool _isNotUpper = false;
-  bool _isNotLower = false;
-  bool _isNotNumber = false;
-  bool _isNotSpecialChar = false;
-  bool _isNotEightMinimal = false;
+  FieldError _emailError = noFieldError;
+  FieldError _passwordError = noFieldError;
+  FieldError _confirmPasswordError = noFieldError;
+  PasswordStrength _strength = checkPasswordStrength('');
 
   // Role
   bool _isSelectedRole = true;
@@ -54,6 +40,8 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
 
   // Visibility
   bool _obscurePassword = true;
+
+  bool _isValidated = false;
 
   // ---------------------------------------------------------------------------
   // Lifecycle
@@ -86,60 +74,40 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
   }
 
   bool _validateEmail(String email) {
-    FieldError error;
-    if (email.isEmpty) {
-      error = _errorOf('Veuillez saisir un email');
-    } else if (!regexEmail.hasMatch(email)) {
-      error = _errorOf('Veuillez saisir un email valide');
-    } else {
-      error = _noError;
-    }
+    final error = validateEmail(
+      email,
+      emptyMessage: 'Veuillez saisir un email',
+      invalidMessage: 'Veuillez saisir un email valide',
+    );
     setState(() => _emailError = error);
     return !error.hasError;
-  }
-
-  bool _validatePasswordStrength(String password) {
-    final notUpper = !regexUpperCase.hasMatch(password);
-    final notLower = !regexLowercase.hasMatch(password);
-    final notNumber = !regexStringWithNumber.hasMatch(password);
-    final notSpecial = !regexSpecialChar.hasMatch(password);
-    final notLength = !regexLength8.hasMatch(password);
-
-    setState(() {
-      _isNotUpper = notUpper;
-      _isNotLower = notLower;
-      _isNotNumber = notNumber;
-      _isNotSpecialChar = notSpecial;
-      _isNotEightMinimal = notLength;
-    });
-
-    return !(notUpper || notLower || notNumber || notSpecial || notLength);
   }
 
   bool _validatePassword(String password) {
     if (password.isEmpty) {
       setState(() {
-        _isNotUpper = _isNotLower =
-            _isNotNumber = _isNotSpecialChar = _isNotEightMinimal = true;
-        _passwordError = _errorOf('');
+        _strength = (
+          notUpper: true,
+          notLower: true,
+          notNumber: true,
+          notSpecial: true,
+          notLength: true,
+        );
+        _passwordError = fieldError('');
       });
       return false;
     }
 
-    final strong = _validatePasswordStrength(password);
+    final strength = checkPasswordStrength(password);
     setState(() {
-      _passwordError = strong ? _noError : _errorOf('');
+      _strength = strength;
+      _passwordError = strength.isValid ? noFieldError : fieldError('');
     });
-    return strong;
+    return strength.isValid;
   }
 
   bool _validateConfirmPassword(String confirm) {
-    FieldError error;
-    if (confirm.isEmpty) {
-      error = _errorOf('Le champ est vide');
-    } else {
-      error = _noError;
-    }
+    final error = validateRequired(confirm, message: 'Le champ est vide');
     setState(() => _confirmPasswordError = error);
     return !error.hasError;
   }
@@ -149,8 +117,9 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
   // ---------------------------------------------------------------------------
   void _nextPage() {
     setState(() {
-      _passwordError = _noError;
-      _confirmPasswordError = _noError;
+      _isValidated = true;
+      _passwordError = noFieldError;
+      _confirmPasswordError = noFieldError;
     });
 
     final email = _emailController.text;
@@ -165,8 +134,8 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
     if (validPassword && validConfirm && password != confirm) {
       const mismatch = 'Les mots de passe ne correspondent pas';
       setState(() {
-        _passwordError = _errorOf(mismatch);
-        _confirmPasswordError = _errorOf(mismatch);
+        _passwordError = fieldError(mismatch);
+        _confirmPasswordError = fieldError(mismatch);
       });
       return;
     }
@@ -187,88 +156,20 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
   // ---------------------------------------------------------------------------
   // Build helpers
   // ---------------------------------------------------------------------------
-
-  /// Reusable decorated [TextField].
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required bool hasError,
-    required String? errorText,
-    bool obscure = false,
-    bool showToggle = false,
-  }) {
-    final border = OutlineInputBorder(
-      borderRadius: const BorderRadius.all(Radius.circular(20)),
-      borderSide: BorderSide(color: textGold),
-    );
-    final errorBorder = const OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-      borderSide: BorderSide(color: Colors.red, width: 2),
-    );
-
-    return TextField(
-      style: TextStyle(color: textWhite),
-      controller: controller,
-      cursorColor: textGold,
-      obscureText: obscure,
-      decoration: InputDecoration(
-        suffixIcon: showToggle
-            ? IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: textGold,
-                ),
-                onPressed: _toggleObscure,
-              )
-            : null,
-        border: border,
-        focusedBorder: border.copyWith(
-          borderSide: BorderSide(color: textGold, width: 2),
-        ),
-        errorText: errorText,
-        errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
-        errorBorder: errorBorder,
-        focusedErrorBorder: errorBorder.copyWith(
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-        ),
-      ),
-    );
-  }
-
-  /// Row label above a field.
-  Widget _buildFieldLabel(String label, bool hasError) {
-    final color = hasError ? Colors.redAccent : textGold;
-    return Row(
-      children: [
-        Icon(Icons.person, color: color),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: color)),
-      ],
-    );
-  }
-
-  /// Password-strength checklist.
   Widget _buildPasswordRequirements() {
-    Color ruleColor(bool failing) => failing ? Colors.redAccent : textGold;
+    Color ruleColor(bool failing) =>
+        (_isValidated && failing) ? Colors.redAccent : textGold;
 
     return Container(
       margin: const EdgeInsets.only(top: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Le mot de passe doit contenir :',
+          const Text('Le mot de passe doit contenir :',
               style: TextStyle(color: textGold, fontSize: 10)),
-          Text('- Une majuscule',
-              style: TextStyle(color: ruleColor(_isNotUpper), fontSize: 10)),
-          Text('- Une minuscule',
-              style: TextStyle(color: ruleColor(_isNotLower), fontSize: 10)),
-          Text('- Un chiffre',
-              style: TextStyle(color: ruleColor(_isNotNumber), fontSize: 10)),
-          Text('- Un caractère spécial',
-              style:
-                  TextStyle(color: ruleColor(_isNotSpecialChar), fontSize: 10)),
-          Text('- Minimum 8 caractères',
-              style: TextStyle(
-                  color: ruleColor(_isNotEightMinimal), fontSize: 10)),
+          for (final rule in passwordRules(_strength))
+            Text(rule.label,
+                style: TextStyle(color: ruleColor(rule.failing), fontSize: 10)),
         ],
       ),
     );
@@ -282,16 +183,12 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Title
-          Container(
-            margin: const EdgeInsets.only(top: 30),
-            child: Text('Bienvenue sur Ezone',
-                style: TextStyle(fontSize: 25, color: textGold)),
-          ),
           Container(
             margin: const EdgeInsets.only(top: 10),
-            child: Text('Inscription',
-                style: TextStyle(fontSize: 15, color: textGold)),
+            child: Text(
+              'Inscription',
+              style: TextStyle(fontSize: 25, color: textGold),
+            ),
           ),
 
           // Role selection
@@ -318,53 +215,48 @@ class _CredentielsSignUpState extends State<CredentielsSignUp> {
           Container(
             margin: const EdgeInsets.only(top: 5),
             width: 300,
-            child: Column(
-              children: [
-                _buildFieldLabel('Votre email', _emailError.hasError),
-                _buildTextField(
-                  controller: _emailController,
-                  hasError: _emailError.hasError,
-                  errorText: _emailError.message,
-                ),
-              ],
+            child: LabeledTextField(
+              icon: Icons.person,
+              label: 'Votre email',
+              controller: _emailController,
+              hasError: _emailError.hasError,
+              errorText: _emailError.message,
+              keyboardType: TextInputType.emailAddress,
             ),
           ),
 
-          // Password
+          // Mot de passe
           Container(
             margin: const EdgeInsets.only(top: 20),
             width: 300,
             child: Column(
               children: [
-                _buildFieldLabel('Mot de passe', _passwordError.hasError),
-                _buildTextField(
+                LabeledTextField(
+                  icon: Icons.lock,
+                  label: 'Mot de passe',
                   controller: _passwordController,
                   hasError: _passwordError.hasError,
                   errorText: _passwordError.message,
-                  obscure: _obscurePassword,
-                  showToggle: true,
+                  obscureText: _obscurePassword,
+                  onToggleObscure: _toggleObscure,
                 ),
                 _buildPasswordRequirements(),
               ],
             ),
           ),
 
-          // Confirm password
+          // Confirmation
           Container(
             margin: const EdgeInsets.only(top: 10),
             width: 300,
-            child: Column(
-              children: [
-                _buildFieldLabel('Confirmer votre mot de passe',
-                    _confirmPasswordError.hasError),
-                _buildTextField(
-                  controller: _confirmPasswordController,
-                  hasError: _confirmPasswordError.hasError,
-                  errorText: _confirmPasswordError.message,
-                  obscure: _obscurePassword,
-                  showToggle: true,
-                ),
-              ],
+            child: LabeledTextField(
+              icon: Icons.lock,
+              label: 'Confirmer votre mot de passe',
+              controller: _confirmPasswordController,
+              hasError: _confirmPasswordError.hasError,
+              errorText: _confirmPasswordError.message,
+              obscureText: _obscurePassword,
+              onToggleObscure: _toggleObscure,
             ),
           ),
 

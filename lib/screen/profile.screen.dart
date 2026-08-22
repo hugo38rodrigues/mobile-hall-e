@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/identification/identification-wrapper.logins.dart';
-import 'package:hall_e_mobile/components/profiles/profile.dart';
+import 'package:hall_e_mobile/use-case/identification/identification-wrapper.logins.dart';
+import 'package:hall_e_mobile/use-case/profiles/profile.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
 

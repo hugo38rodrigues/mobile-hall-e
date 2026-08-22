@@ -2,25 +2,26 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/components/identification/bar_information.dart';
-import 'package:hall_e_mobile/components/identification/client_information.dart';
 import 'package:hall_e_mobile/models/information.model.dart';
 import 'package:hall_e_mobile/models/user-credentiels.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
+import 'package:hall_e_mobile/use-case/identification/bar_information.dart';
+import 'package:hall_e_mobile/use-case/identification/client_information.dart';
 import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
+import 'package:hall_e_mobile/utils/snackbar.utils.dart';
 
 class InformationsSignUp extends ConsumerStatefulWidget {
   final Function(int) goBack;
-  final Function getStateProfile;
+  final Function getStateSession;
   final UserCredentiels credentiels;
 
   const InformationsSignUp({
     super.key,
     required this.credentiels,
     required this.goBack,
-    required this.getStateProfile,
+    required this.getStateSession,
   });
 
   @override
@@ -83,7 +84,9 @@ class _InformationsSignUpState extends ConsumerState<InformationsSignUp> {
       );
 
       if (response.statusCode == 201) {
-        widget.getStateProfile();
+        if (!mounted) return;
+        showSuccessSnackBar(context, 'Inscription réussie !');
+        widget.getStateSession();
       }
     } catch (e) {
       if (e is DioException) {

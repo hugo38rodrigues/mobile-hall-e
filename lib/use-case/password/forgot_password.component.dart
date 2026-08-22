@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hall_e_mobile/components/my_app_bar.component.dart';
-import 'package:hall_e_mobile/components/password/get_email.component.dart';
-import 'package:hall_e_mobile/components/password/reset_password.component.dart';
-import 'package:hall_e_mobile/components/password/send_code.component.dart';
+import 'package:hall_e_mobile/use-case/my_app_bar.component.dart';
+import 'package:hall_e_mobile/use-case/password/get_email.component.dart';
+import 'package:hall_e_mobile/use-case/password/reset_password.component.dart';
+import 'package:hall_e_mobile/use-case/password/send_code.component.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
 
 class ForgotPassword extends StatefulWidget {
