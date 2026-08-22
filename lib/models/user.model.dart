@@ -6,6 +6,7 @@ import 'package:hall_e_mobile/models/programmation-match.model.dart';
 
 abstract class User {
   final String id;
+  final bool isConnected;
   final String token;
   final String email;
   final String role;
@@ -15,6 +16,7 @@ abstract class User {
 
   User({
     required this.id,
+    required this.isConnected,
     required this.token,
     required this.email,
     required this.role,
@@ -53,6 +55,7 @@ abstract class User {
 class ClientUser extends User {
   ClientUser({
     required super.id,
+    required super.isConnected,
     required super.token,
     required super.email,
     required super.informations,
@@ -65,6 +68,7 @@ class ClientUser extends User {
       id: data['id'] ?? '',
       token: data['token'] ?? '',
       email: data['email'] ?? '',
+      isConnected: data['isConnected'] ?? false,
       informations: Informations(
         firstName: data['informations']['firstName'],
         lastName: data['informations']['lastName'],
@@ -83,6 +87,7 @@ class BarUser extends User {
 
   BarUser({
     required super.id,
+    required super.isConnected,
     required super.token,
     required super.email,
     required super.informations,
@@ -96,6 +101,7 @@ class BarUser extends User {
       id: data['id'] ?? '',
       token: data['token'] ?? '',
       email: data['email'] ?? '',
+      isConnected: data['isConnected'] ?? false,
       informations: Informations(
         name: data['informations']['name'] ?? '',
         address: data['informations']['address'],
@@ -125,6 +131,7 @@ class GuestUser extends User {
       : super(
           id: '',
           token: '',
+          isConnected: false,
           email: '',
           role: 'guest',
           informations: Informations(name: 'guest'),

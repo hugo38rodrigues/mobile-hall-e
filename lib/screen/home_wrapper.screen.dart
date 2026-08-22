@@ -111,11 +111,14 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final role = ref.watch(accountProvider).role;
+    final profil = ref.watch(accountProvider);
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final double navBarHeight = isTablet ? 90 : 80;
-    final String isNotBar = role != 'bar' ? "Bar" : "Ma programmation";
+    final String isNotBar = profil.role != 'bar' ? "Bar" : "Ma programmation";
+    final String label = profil.role == 'bar'
+        ? (profil.informations.name ?? 'Profile')
+        : (profil.informations.firstName ?? 'Profile');
 
     return Scaffold(
       appBar: MyAppBar(),
@@ -180,7 +183,7 @@ class _HomeWrapperScreenState extends ConsumerState<HomeWrapperScreen> {
                 _buildNavButton(
                     'beer_unselected.png', isNotBar, 1, screenWidth, isTablet),
                 _buildNavButton(
-                    'user_unselected.png', "Profile", 2, screenWidth, isTablet),
+                    'user_unselected.png', label, 2, screenWidth, isTablet),
               ],
             ),
           ),
