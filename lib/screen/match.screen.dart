@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
+
 import '../use-case/calendar.component.dart';
 import '../use-case/filters.component.dart';
 import '../use-case/matches/match_list.component.dart';
@@ -11,10 +12,17 @@ class MatchScreen extends StatefulWidget {
   State<MatchScreen> createState() => _MatchScreenState();
 }
 
-class _MatchScreenState extends State<MatchScreen> {
+class _MatchScreenState extends State<MatchScreen>
+    with AutomaticKeepAliveClientMixin {
   DateTime _selectedDate = DateTime.now();
   Map<String, List<dynamic>> _filtersList = {};
   bool _isFavoritesSelected = false;
+
+  // Garde l'état (filtres + date) en vie quand on navigue vers une autre
+  // page du PageView, au lieu de le détruire. Reste en mémoire uniquement :
+  // tout se réinitialise à la fermeture de l'app.
+  @override
+  bool get wantKeepAlive => true;
 
   // Aucune persistance : les filtres démarrent vides à chaque ouverture
   // et ne sont pas rechargés depuis SharedPreferences.
@@ -76,55 +84,58 @@ class _MatchScreenState extends State<MatchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // requis par AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Container(
         color: background,
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Badge(
-                          // Masque la bulle quand il n'y a aucun filtre actif.
-                          isLabelVisible: _activeFiltersCount > 0,
-                          backgroundColor: textGold,
-                          textColor: background,
-                          label: Text('$_activeFiltersCount'),
-                          child: IconButton(
-                            icon: const Icon(Icons.tune),
-                            color: textWhite,
-                            onPressed: () => _openFilterSheet(context),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: HorizontalCalendar(
-                            onDateSelected: _onDateSelected,
-                          ),
-                        ),
-                      ],
+        child: Column(
+          children: [
+            // En-tête fixe (hors scroll) : bouton filtres + calendrier.
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Badge(
+                    // Masque la bulle quand il n'y a aucun filtre actif.
+                    isLabelVisible: _activeFiltersCount > 0,
+                    backgroundColor: textGold,
+                    textColor: background,
+                    label: Text('$_activeFiltersCount'),
+                    child: IconButton(
+                      icon: const Icon(Icons.tune),
+                      color: textWhite,
+                      onPressed: () => _openFilterSheet(context),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: HorizontalCalendar(
+                      onDateSelected: _onDateSelected,
+                    ),
+                  ),
+                ],
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    child: MatchList(
-                      isFavoritesSelected: _isFavoritesSelected,
-                      filtersList: _filtersList,
-                      selectedDate: _selectedDate,
+            // Seule la liste des matchs défile.
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 80),
+                          child: MatchList(
+                            isFavoritesSelected: _isFavoritesSelected,
+                            filtersList: _filtersList,
+                            selectedDate: _selectedDate,
+                          ),
+                        );
+                      },
+                      childCount: 1,
                     ),
-                  );
-                },
-                childCount: 1,
+                  ),
+                ],
               ),
             ),
           ],

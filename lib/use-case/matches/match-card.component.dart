@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:hall_e_mobile/use-case/matches/match_details_page.component.dart';
 import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/game.model.dart';
 import 'package:hall_e_mobile/models/league.model.dart';
@@ -10,6 +9,7 @@ import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
+import 'package:hall_e_mobile/use-case/matches/match_details_page.component.dart';
 import 'package:hall_e_mobile/utils/format-stream-url.utils.dart';
 import 'package:intl/intl.dart';
 
