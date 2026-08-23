@@ -91,78 +91,70 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Titre : nom du jeu + cœur, alignés sur la même ligne ──
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
                   widget.game.name,
                   style: const TextStyle(
-                      color: textGold, fontWeight: FontWeight.bold),
+                    color: textGold,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   softWrap: true,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 10),
-              if (isNotGuest)
+              if (isNotGuest) ...[
+                const SizedBox(width: 10),
                 _favoriteIcon(
                   isFavorite: _gameFavorites.any((g) => g.id == widget.game.id),
                   onTap: () => _toggleFavorite('game', widget.game.id),
                 ),
+              ],
             ],
           ),
-          Row(
+          const SizedBox(height: 6),
+          // ── Date, alignée au bord droit (même bord que les cœurs) ──
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              _days,
+              textAlign: TextAlign.right,
+              style:
+                  const TextStyle(color: textGold, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // ── Libellés / valeurs / cœurs alignés en colonnes ──
+          Table(
+            columnWidths: const {
+              0: IntrinsicColumnWidth(), // libellés (largeur du plus large)
+              1: FlexColumnWidth(), // valeurs (espace restant)
+              2: IntrinsicColumnWidth(), // cœurs (au bord droit)
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(right: 20),
-                child: Text(
-                  _days,
-                  style: const TextStyle(
-                      color: textGold, fontWeight: FontWeight.bold),
-                ),
+              _buildInfoRow(
+                'Compétition :',
+                widget.league.name,
+                trailing: isNotGuest
+                    ? _favoriteIcon(
+                        isFavorite: _leagueFavorites
+                            .any((l) => l.id == widget.league.id),
+                        onTap: () =>
+                            _toggleFavorite('league', widget.league.id),
+                      )
+                    : null,
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Text('Compétitions:',
-                  style: TextStyle(color: textGold, fontSize: 12)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.league.name,
-                  style: const TextStyle(
-                      color: textGold, fontWeight: FontWeight.bold),
-                  softWrap: true,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 10),
-              if (isNotGuest)
-                _favoriteIcon(
-                  isFavorite:
-                      _leagueFavorites.any((l) => l.id == widget.league.id),
-                  onTap: () => _toggleFavorite('league', widget.league.id),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
+              _buildInfoRow(
                 widget.numberOfGame == '1'
-                    ? 'Nombre de game:'
-                    : 'Nombre de games',
-                style: const TextStyle(color: textGold, fontSize: 12),
-              ),
-              const SizedBox(width: 10),
-              Text(
+                    ? 'Nombre de game :'
+                    : 'Nombre de games :',
                 widget.numberOfGame,
-                style: const TextStyle(
-                    color: textGold, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -171,45 +163,71 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
     );
   }
 
+  /// Une ligne du tableau d'infos : libellé | valeur | cœur (optionnel).
+  /// Les trois colonnes sont centrées verticalement pour un rendu régulier.
+  TableRow _buildInfoRow(String label, String value, {Widget? trailing}) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12, top: 6, bottom: 6),
+          child: Text(
+            label,
+            style: const TextStyle(color: textGold, fontSize: 12),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            value,
+            style:
+                const TextStyle(color: textGold, fontWeight: FontWeight.bold),
+            softWrap: true,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: trailing ?? const SizedBox.shrink(),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTeamsRow(bool isNotGuest) {
     return Container(
-      padding: const EdgeInsets.only(top: 50),
-      child: SizedBox(
-        width: 350,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // aligne les 3 blocs sur la même ligne
-          children: [
-            Expanded(child: _buildTeamColumn(widget.team1, isNotGuest)),
-            _matchHourBadge(),
-            Expanded(child: _buildTeamColumn(widget.team2, isNotGuest)),
-          ],
-        ),
+      // Plus de largeur figée (350) : responsive, s'adapte à tous les écrans.
+      padding: const EdgeInsets.only(top: 50, left: 30, right: 30),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(child: _buildTeamColumn(widget.team1, isNotGuest)),
+          const SizedBox(width: 12),
+          _matchHourBadge(),
+          const SizedBox(width: 12),
+          Expanded(child: _buildTeamColumn(widget.team2, isNotGuest)),
+        ],
       ),
     );
   }
 
   Widget _buildTeamColumn(Team team, bool isNotGuest) {
-    return Column(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Flexible(
-              child: _teamAcronym(team.acronym),
-            ),
-            if (isNotGuest) ...[
-              const SizedBox(width: 6), // espace entre l'acronyme et le cœur
-              _favoriteIcon(
-                isFavorite: _teamsFavorites.any((t) => t.id == team.id),
-                onTap: () => _toggleFavorite('team', team.id),
-              ),
-            ],
-          ],
-        ),
+        Flexible(child: _teamAcronym(team.acronym)),
+        if (isNotGuest) ...[
+          const SizedBox(width: 6), // espace entre l'acronyme et le cœur
+          _favoriteIcon(
+            isFavorite: _teamsFavorites.any((t) => t.id == team.id),
+            onTap: () => _toggleFavorite('team', team.id),
+          ),
+        ],
       ],
     );
   }
@@ -239,6 +257,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
       child: Icon(
         isFavorite ? Icons.favorite : Icons.favorite_outline,
         color: textGold,
+        size: 22,
       ),
     );
   }

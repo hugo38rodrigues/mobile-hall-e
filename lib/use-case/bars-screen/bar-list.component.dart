@@ -134,7 +134,7 @@ class _BarListState extends ConsumerState<BarList> {
     if (_isLoading) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.only(top: 50),
+          padding: const EdgeInsets.only(top: 50),
           child: CustomLoader(text: "Chargement des bars"),
         ),
       );
@@ -167,6 +167,7 @@ class _BarListState extends ConsumerState<BarList> {
       return const Center(
         child: Text(
           "Aucun bar ne programme de matches à proximité",
+          textAlign: TextAlign.center,
           style: TextStyle(color: textGold, fontSize: 15),
         ),
       );

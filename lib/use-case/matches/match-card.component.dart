@@ -52,6 +52,10 @@ class _MatchCardState extends ConsumerState<MatchCard> {
   // Helpers
   // ---------------------------------------------------------------------------
   bool? _programmedOverride;
+
+  // Retour visuel d'appui : la carte se rétracte légèrement quand on la presse.
+  bool _pressed = false;
+
   String _formatTime(String date) {
     return DateFormat("HH'h'mm").format(DateTime.parse(date).toLocal());
   }
@@ -141,7 +145,7 @@ class _MatchCardState extends ConsumerState<MatchCard> {
     );
   }
 
-  /// Bandeau supérieur : nom du jeu + heure.
+  /// Bandeau supérieur : nom du jeu + heure + chevron (indice de clic).
   Widget _buildGameHeader(String hours) {
     return Container(
       decoration: const BoxDecoration(color: bgCard),
@@ -149,14 +153,18 @@ class _MatchCardState extends ConsumerState<MatchCard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            widget.game.name.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 18,
-              color: textWhite,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              widget.game.name.toUpperCase(),
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                color: textWhite,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
@@ -166,6 +174,9 @@ class _MatchCardState extends ConsumerState<MatchCard> {
             ),
             child: Text(hours, style: const TextStyle(color: textGold)),
           ),
+          // Indice visuel : signale que la carte est cliquable.
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, color: textGold, size: 22),
         ],
       ),
     );
@@ -206,12 +217,17 @@ class _MatchCardState extends ConsumerState<MatchCard> {
               color: textGold,
               // couleur quand désactivé (sinon gris invisible)
               disabledColor: textGold,
+              // Aligné au bord droit comme les flammes et le chevron :
+              // on retire le padding interne mais on garde une zone de tap.
+              padding: EdgeInsets.zero,
+              alignment: Alignment.centerRight,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               icon: isProgrammed
                   ? Text(
                       "Match programmé",
                       style: TextStyle(color: textGold),
                     )
-                  : Icon(Icons.add_circle),
+                  : const Icon(Icons.add_circle, size: 24),
             )
           else if (widget.programmed != null)
             const Text(
@@ -256,7 +272,8 @@ class _MatchCardState extends ConsumerState<MatchCard> {
           Row(
             children: List.generate(
               widget.hypeScore.clamp(0, 3),
-              (_) => const Icon(FontAwesomeIcons.fire, color: textGold),
+              (_) =>
+                  const Icon(FontAwesomeIcons.fire, color: textGold, size: 20),
             ),
           ),
         ],
@@ -276,22 +293,24 @@ class _MatchCardState extends ConsumerState<MatchCard> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Material(
-        color: background,
-        borderRadius: BorderRadius.circular(1),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(1),
-          onTap: _openDetails,
-          splashColor: textGold,
-          highlightColor: const Color.fromRGBO(255, 255, 255, 0.1),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
+      child: GestureDetector(
+        // onTapUp ouvre le détail. Si un bouton interne (ex. "programmer"
+        // pour les bars) capte le tap, ce geste est annulé (onTapCancel),
+        // donc pas de navigation involontaire.
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          _openDetails();
+        },
+        child: AnimatedScale(
+          scale: _pressed ? 0.97 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: Padding(
             padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-            ),
             child: Card(
+              clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(
                 side: const BorderSide(color: textGold, width: 0.3),
                 borderRadius: BorderRadius.circular(12),
@@ -299,76 +318,67 @@ class _MatchCardState extends ConsumerState<MatchCard> {
               elevation: 6,
               shadowColor: const Color.fromRGBO(0, 0, 0, 2),
               color: bgCard,
-              child: Padding(
-                padding: const EdgeInsets.only(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildGameHeader(hours),
-                    _buildLeagueRow(matchIsProgrammed),
-                    _buildStreamRow(),
-                    const SizedBox(height: 12),
-                    Divider(thickness: 0.0, color: textGold),
-                    // Équipes
-                    Container(
-                      alignment: Alignment.center,
-                      color: bgCard,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 6),
-                          const SizedBox(height: 6),
-                          _buildTeamRow(widget.team1),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        textGold.withAlpha(
-                                            0), // transparent au début
-                                        textGold, // plein près du VS
-                                      ],
-                                    ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildGameHeader(hours),
+                  _buildLeagueRow(matchIsProgrammed),
+                  _buildStreamRow(),
+                  const SizedBox(height: 12),
+                  Divider(thickness: 0.0, color: textGold),
+                  // Équipes
+                  Container(
+                    alignment: Alignment.center,
+                    color: bgCard,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        _buildTeamRow(widget.team1),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      textGold.withAlpha(0), // transparent
+                                      textGold, // plein près du VS
+                                    ],
                                   ),
                                 ),
                               ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  "VS",
-                                  style:
-                                      TextStyle(color: textGold, fontSize: 25),
-                                ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                "VS",
+                                style: TextStyle(color: textGold, fontSize: 25),
                               ),
-                              Expanded(
-                                child: Container(
-                                  height: 1,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        textGold, // plein près du VS
-                                        textGold.withAlpha(
-                                            0), // transparent à la fin
-                                      ],
-                                    ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      textGold, // plein près du VS
+                                      textGold.withAlpha(0), // transparent
+                                    ],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          _buildTeamRow(widget.team2),
-                          const SizedBox(height: 6),
-                          const SizedBox(height: 6),
-                          const SizedBox(height: 6),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                        _buildTeamRow(widget.team2),
+                        const SizedBox(height: 18),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
