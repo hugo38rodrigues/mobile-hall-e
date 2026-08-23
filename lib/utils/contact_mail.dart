@@ -12,8 +12,6 @@ Future<void> launchEmail(BuildContext context) async {
     },
   );
   
-  // WARNING: Probleme d'ouverture de l'application mail
-
   final canLaunch = await canLaunchUrl(emailUri);
   if (!context.mounted) return;
 

@@ -11,14 +11,17 @@ import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/utils/dio.utils.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import 'package:hall_e_mobile/utils/snackbar.utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 
 class FilterPage extends ConsumerStatefulWidget {
   final Function(Map<String, List<String>>) getSelectedFilters;
 
+  /// Sélection déjà active, transmise par le parent à l'ouverture,
+  /// pour restaurer le rappel et l'état des boutons (pas de persistance disque).
+  final Map<String, List<String>>? initialFilters;
+
   const FilterPage({
     required this.getSelectedFilters,
+    this.initialFilters,
     super.key,
   });
 
@@ -55,18 +58,35 @@ class _FilterPageState extends ConsumerState<FilterPage> {
   // ──────────────────── LIFECYCLE ────────────────────
 
   @override
+  void initState() {
+    super.initState();
+    // On repart de la sélection déjà active (copie des listes pour ne pas
+    // modifier directement l'état du parent).
+    final initial = widget.initialFilters;
+    if (initial != null) {
+      _selectedFilters = {
+        'games': List<String>.from(initial['games'] ?? []),
+        'leagues': List<String>.from(initial['leagues'] ?? []),
+        'teams': List<String>.from(initial['teams'] ?? []),
+        'barName': List<String>.from(initial['barName'] ?? []),
+      };
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_userRole == null) {
       _userRole = ref.read(accountProvider).role;
-      _fetchFilters();
-      _loadSavedFilters();
+      _loadAvailableFilters();
     }
   }
 
   // ──────────────────── API ────────────────────
 
-  Future<void> _fetchFilters() async {
+  /// Récupère depuis l'API la liste des filtres disponibles
+  /// (jeux, compétitions, équipes, et bars si l'utilisateur est un client).
+  Future<void> _loadAvailableFilters() async {
     final apiUrl = dotenv.env['API_URL'];
     try {
       final response = await request('$apiUrl/filters', 'GET')
@@ -90,57 +110,46 @@ class _FilterPageState extends ConsumerState<FilterPage> {
     }
   }
 
-  // ──────────────────── PERSISTENCE ────────────────────
-
-  Future<void> _loadSavedFilters() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedFilters = {
-        'games': prefs.getStringList('games') ?? [],
-        'leagues': prefs.getStringList('leagues') ?? [],
-        'teams': prefs.getStringList('teams') ?? [],
-        'barName': prefs.getStringList('barName') ?? [],
-      };
-    });
-
-    widget.getSelectedFilters(_selectedFilters);
-  }
-
-  Future<void> _saveFilters() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (final key in ['games', 'leagues', 'teams', 'barName']) {
-      await prefs.setStringList(key, _selectedFilters[key] ?? []);
-    }
-    widget.getSelectedFilters(_selectedFilters);
-  }
-
   // ──────────────────── LOGIQUE FILTRES ────────────────────
 
-  void _toggleFilter(String category, String item) {
+  /// Transmet la sélection courante au parent.
+  /// (Aucune sauvegarde en local : la sélection est perdue à la fermeture.)
+  void _notifySelectionChanged() {
+    widget.getSelectedFilters(_selectedFilters);
+  }
+
+  /// Ajoute ou retire un élément de la sélection selon son état actuel.
+  void _toggleFilterSelection(String category, String item) {
     setState(() {
       final list = _selectedFilters[category]!;
       list.contains(item) ? list.remove(item) : list.add(item);
     });
-    _saveFilters();
+    _notifySelectionChanged();
   }
 
-  void _removeFilter(String category, String item) {
+  /// Retire un élément précis de la sélection.
+  void _removeFilterSelection(String category, String item) {
     setState(() => _selectedFilters[category]!.remove(item));
-    _saveFilters();
+    _notifySelectionChanged();
   }
 
-  void _resetFilters() {
-    setState(
-        () => _selectedFilters.forEach((key, _) => _selectedFilters[key] = []));
-    _saveFilters();
+  /// Vide toutes les sélections.
+  void _clearAllSelections() {
+    setState(() {
+      _selectedFilters.forEach((key, _) => _selectedFilters[key] = []);
+    });
+    _notifySelectionChanged();
   }
 
-  void _applyFilters() {
-    widget.getSelectedFilters(_selectedFilters);
+  /// Valide les filtres et ferme la page.
+  void _validateAndClose() {
+    _notifySelectionChanged();
     Navigator.pop(context);
   }
 
-  void _onCategoryPressed(String category) {
+  /// Gère le clic sur une catégorie de gauche.
+  /// Cas particulier "favoris" : pré-remplit la sélection avec les favoris du compte.
+  void _onCategorySelected(String category) {
     if (category == 'favoris') {
       final favorites = ref.read(accountProvider).favorites;
 
@@ -157,7 +166,7 @@ class _FilterPageState extends ConsumerState<FilterPage> {
           'barName': favorites.barName.map((b) => b['name'] as String).toList(),
         };
       });
-      _saveFilters();
+      _notifySelectionChanged();
       return;
     }
 
@@ -167,7 +176,11 @@ class _FilterPageState extends ConsumerState<FilterPage> {
     });
   }
 
-  List<Map<String, String>> _getFilterItems() {
+  /// Construit la liste des éléments à afficher à droite :
+  /// - si une recherche est en cours, on filtre toutes catégories confondues ;
+  /// - sinon on affiche uniquement la catégorie sélectionnée.
+  /// Les éléments déjà sélectionnés sont remontés en haut de liste.
+  List<Map<String, String>> _getDisplayedItems() {
     final allItems = [
       ..._games.map((g) => {'category': 'games', 'name': g.name}),
       ..._leagues.map((l) => {'category': 'leagues', 'name': l.name}),
@@ -194,7 +207,7 @@ class _FilterPageState extends ConsumerState<FilterPage> {
     return items;
   }
 
-  bool _isSelected(Map<String, String> item) =>
+  bool _isItemSelected(Map<String, String> item) =>
       _selectedFilters[item['category']]?.contains(item['name']) ?? false;
 
   bool get _hasActiveFilters =>
@@ -232,7 +245,7 @@ class _FilterPageState extends ConsumerState<FilterPage> {
           _buildHeader(),
           _buildSearchBar(),
           if (_hasActiveFilters) _buildActiveFiltersRecap(),
-          SizedBox(height: 35),
+          const SizedBox(height: 35),
           Expanded(child: _buildFiltersBody()),
           _buildBottomButtons(),
         ],
@@ -244,7 +257,7 @@ class _FilterPageState extends ConsumerState<FilterPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: background,
         border: Border(
           bottom: BorderSide(color: textGold),
@@ -268,8 +281,8 @@ class _FilterPageState extends ConsumerState<FilterPage> {
                 labelStyle: const TextStyle(color: textGold, fontSize: 12),
                 label: Text(filter['name']!),
                 deleteIcon: const Icon(Icons.close, size: 14, color: textGold),
-                onDeleted: () =>
-                    _removeFilter(filter['category']!, filter['name']!),
+                onDeleted: () => _removeFilterSelection(
+                    filter['category']!, filter['name']!),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               );
@@ -337,14 +350,13 @@ class _FilterPageState extends ConsumerState<FilterPage> {
                           foregroundColor:
                               _selectedCategory == cat ? background : textWhite,
                           side: BorderSide(
-                            color: _selectedCategory == cat
-                                ? textGold
-                                : textGrey, // couleur de la bordure
-                            width: 2, // épaisseur
+                            color:
+                                _selectedCategory == cat ? textGold : textGrey,
+                            width: 2,
                           ),
                           minimumSize: const Size(150, 40),
                         ),
-                        onPressed: () => _onCategoryPressed(cat),
+                        onPressed: () => _onCategorySelected(cat),
                         child: Text(_categoryLabels[cat]!),
                       ),
                     ))
@@ -352,25 +364,24 @@ class _FilterPageState extends ConsumerState<FilterPage> {
           ),
           Expanded(
             child: ListView(
-              children: _getFilterItems()
+              children: _getDisplayedItems()
                   .map((item) => Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: 4.0, horizontal: 8.0),
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                _isSelected(item) ? textGold : bgCard,
+                                _isItemSelected(item) ? textGold : bgCard,
                             foregroundColor:
-                                _isSelected(item) ? background : textWhite,
+                                _isItemSelected(item) ? background : textWhite,
                             side: BorderSide(
-                              color: _isSelected(item)
-                                  ? textGold
-                                  : textGrey, // couleur de la bordure
-                              width: 2, // épaisseur
+                              color:
+                                  _isItemSelected(item) ? textGold : textGrey,
+                              width: 2,
                             ),
                           ),
-                          onPressed: () =>
-                              _toggleFilter(item['category']!, item['name']!),
+                          onPressed: () => _toggleFilterSelection(
+                              item['category']!, item['name']!),
                           child: Text(item['name']!),
                         ),
                       ))
@@ -399,7 +410,7 @@ class _FilterPageState extends ConsumerState<FilterPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed: !_hasActiveFilters ? null : _resetFilters,
+              onPressed: !_hasActiveFilters ? null : _clearAllSelections,
               child:
                   const Text('Réinitialiser', style: TextStyle(fontSize: 16)),
             ),
@@ -410,12 +421,12 @@ class _FilterPageState extends ConsumerState<FilterPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: textGold,
                 foregroundColor: background,
-                side: BorderSide(color: textGold, width: 2),
+                side: const BorderSide(color: textGold, width: 2),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed: _applyFilters,
+              onPressed: _validateAndClose,
               child: const Text('Valider', style: TextStyle(fontSize: 16)),
             ),
           ),

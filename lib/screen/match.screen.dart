@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../use-case/calendar.component.dart';
 import '../use-case/filters.component.dart';
 import '../use-case/matches/match_list.component.dart';
@@ -9,7 +8,7 @@ class MatchScreen extends StatefulWidget {
   const MatchScreen({super.key});
 
   @override
-  _MatchScreenState createState() => _MatchScreenState();
+  State<MatchScreen> createState() => _MatchScreenState();
 }
 
 class _MatchScreenState extends State<MatchScreen> {
@@ -17,36 +16,29 @@ class _MatchScreenState extends State<MatchScreen> {
   Map<String, List<dynamic>> _filtersList = {};
   bool _isFavoritesSelected = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadFilters();
-  }
+  // Aucune persistance : les filtres démarrent vides à chaque ouverture
+  // et ne sont pas rechargés depuis SharedPreferences.
 
-  Future<void> _loadFilters() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _filtersList = {
-        'games': prefs.getStringList('games') ?? [],
-        'leagues': prefs.getStringList('leagues') ?? [],
-        'teams': prefs.getStringList('teams') ?? [],
-      };
-    });
-  }
+  /// Nombre total de filtres actifs, toutes catégories confondues.
+  int get _activeFiltersCount =>
+      _filtersList.values.fold(0, (total, list) => total + list.length);
 
-  void _updateSelectedDate(DateTime date) {
+  /// Met à jour la date sélectionnée dans le calendrier.
+  void _onDateSelected(DateTime date) {
     setState(() {
       _selectedDate = date;
     });
   }
 
-  void _getFiltersList(Map<String, List<String>> filterList) {
+  /// Reçoit la nouvelle sélection de filtres renvoyée par la FilterPage.
+  void _onFiltersChanged(Map<String, List<String>> filters) {
     setState(() {
-      _filtersList = filterList;
+      _filtersList = filters;
     });
   }
 
-  void _showFilterPage(BuildContext context) {
+  /// Ouvre la page de filtres dans une bottom sheet animée.
+  void _openFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -69,7 +61,11 @@ class _MatchScreenState extends State<MatchScreen> {
                 topRight: Radius.circular(20),
               ),
               child: FilterPage(
-                getSelectedFilters: _getFiltersList,
+                getSelectedFilters: _onFiltersChanged,
+                // Restaure la sélection courante dans la page de filtres.
+                initialFilters: _filtersList.map(
+                  (key, value) => MapEntry(key, value.cast<String>()),
+                ),
               ),
             ),
           ),
@@ -92,15 +88,22 @@ class _MatchScreenState extends State<MatchScreen> {
                   children: [
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.tune),
-                          color: textWhite,
-                          onPressed: () => _showFilterPage(context),
+                        Badge(
+                          // Masque la bulle quand il n'y a aucun filtre actif.
+                          isLabelVisible: _activeFiltersCount > 0,
+                          backgroundColor: textGold,
+                          textColor: background,
+                          label: Text('$_activeFiltersCount'),
+                          child: IconButton(
+                            icon: const Icon(Icons.tune),
+                            color: textWhite,
+                            onPressed: () => _openFilterSheet(context),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: HorizontalCalendar(
-                            onDateSelected: _updateSelectedDate,
+                            onDateSelected: _onDateSelected,
                           ),
                         ),
                       ],
