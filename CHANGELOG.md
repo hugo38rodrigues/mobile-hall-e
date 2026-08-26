@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- [HE-19](https://xwdrblue.atlassian.net/browse/HE-19) — *Calculating GPS Distances Between Users and the Bar*
 - [HE-29](https://xwdrblue.atlassian.net/browse/HE-29) — *Forgotten password—typos corrected*
 - [HE-28](https://xwdrblue.atlassian.net/browse/HE-28) — *Fixed the fields without the email option*
 - [HE-43](https://xwdrblue.atlassian.net/browse/HE-43) — *When you switch pages, the filters on the Match page disappear*

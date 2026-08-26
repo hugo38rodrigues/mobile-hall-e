@@ -249,16 +249,25 @@ class BarCard extends ConsumerWidget {
             backgroundColor: bgCard,
             side: BorderSide(color: textGrey),
             elevation: 4,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8), // ← resserre un peu
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize:
+                MainAxisSize.min, // ← ne prend que la place nécessaire
             children: [
-              Text(
-                isActivated ? "Trouver le bar" : "Activer la localisation",
-                style: const TextStyle(
-                  color: textGold,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              Flexible(
+                // ← le texte cède l'espace au lieu de forcer sa taille
+                child: Text(
+                  isActivated ? "Trouver le bar" : "Activer la localisation",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: textGold,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               if (isActivated) ...[

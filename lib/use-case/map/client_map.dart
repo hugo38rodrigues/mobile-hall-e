@@ -47,8 +47,8 @@ class _ClientMapState extends ConsumerState<ClientMap> {
     }
   }
 
-  List<Marker> _buildBarMarkers() {
-    return widget.barMinimalInformations.map((bar) {
+  List<Marker> _buildBarMarkers(List<BarMinimalInformations> bars) {
+    return bars.map((bar) {
       return Marker(
         point: LatLng(bar.latitude, bar.longitude),
         width: 40,
@@ -137,15 +137,26 @@ class _ClientMapState extends ConsumerState<ClientMap> {
 
     const distanceCalc = Distance();
 
-    final hasBarWithin5km = widget.barMinimalInformations.any((bar) {
+// Ne garder que les bars à moins de 10 km de l'utilisateur
+    final nearbyBars = widget.barMinimalInformations.where((bar) {
       final distanceInMeters = distanceCalc.as(
         LengthUnit.Meter,
         userLatLng,
         LatLng(bar.latitude, bar.longitude),
       );
-      return distanceInMeters <= 2000;
-    });
-    final initialZoom = hasBarWithin5km ? 15.0 : 13.0;
+      return distanceInMeters <= 10000;
+    }).toList();
+
+// Calcule une fenêtre de carte correspondant à un rayon de 10 km
+    final north = distanceCalc.offset(userLatLng, 10000, 0);
+    final south = distanceCalc.offset(userLatLng, 10000, 180);
+    final east = distanceCalc.offset(userLatLng, 10000, 90);
+    final west = distanceCalc.offset(userLatLng, 10000, 270);
+
+    final bounds = LatLngBounds(
+      LatLng(north.latitude, west.longitude),
+      LatLng(south.latitude, east.longitude),
+    );
 
     return SizedBox(
       width: 350,
@@ -153,7 +164,10 @@ class _ClientMapState extends ConsumerState<ClientMap> {
       child: FlutterMap(
         options: MapOptions(
           initialCenter: userLatLng,
-          initialZoom: initialZoom,
+          initialCameraFit: CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.all(16),
+          ),
           onTap: (_, __) => _popupController.hideAllPopups(),
         ),
         children: [
@@ -166,13 +180,12 @@ class _ClientMapState extends ConsumerState<ClientMap> {
           PopupMarkerLayer(
             options: PopupMarkerLayerOptions(
               popupController: _popupController,
-              markers: _buildBarMarkers(),
+              markers: _buildBarMarkers(nearbyBars), // ← liste filtrée
               popupDisplayOptions: PopupDisplayOptions(
                 builder: (context, marker) => _buildPopup(marker, isNotGuest),
               ),
             ),
           ),
-          // Marqueur utilisateur
           MarkerLayer(
             markers: [
               Marker(
