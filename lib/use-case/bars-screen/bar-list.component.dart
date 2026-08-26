@@ -19,12 +19,13 @@ class BarList extends ConsumerStatefulWidget {
 }
 
 class _BarListState extends ConsumerState<BarList> {
-  static const _maxDistanceKm = 15.0;
+  static const _maxDistanceKm = 10.0;
   static const _timeout = Duration(seconds: 10);
 
   List<BarUser> _bars = [];
   bool _isLoading = false;
   String? _error;
+  bool _sortAscending = true; // true = plus proche → plus loin
 
   @override
   void initState() {
@@ -86,7 +87,7 @@ class _BarListState extends ConsumerState<BarList> {
     }
   }
 
-  // ──────────────────── FILTRE ────────────────────
+  // ──────────────────── FILTRE & TRI ────────────────────
 
   double _getDistance(User bar, double lat, double lng) {
     return Geolocator.distanceBetween(
@@ -99,12 +100,32 @@ class _BarListState extends ConsumerState<BarList> {
   }
 
   List<BarUser> _filterByDistance(List<BarUser> bars, double lat, double lng) {
-    return bars.where((bar) {
+    final filtered = bars.where((bar) {
       if (bar.programations == null || bar.programations!.isEmpty) return false;
       return _getDistance(bar, lat, lng) <= _maxDistanceKm;
-    }).toList()
-      ..sort((a, b) =>
-          _getDistance(a, lat, lng).compareTo(_getDistance(b, lat, lng)));
+    }).toList();
+    _sortBars(filtered, lat, lng);
+    return filtered;
+  }
+
+  void _sortBars(List<BarUser> bars, double lat, double lng) {
+    bars.sort((a, b) {
+      final cmp =
+          _getDistance(a, lat, lng).compareTo(_getDistance(b, lat, lng));
+      return _sortAscending ? cmp : -cmp;
+    });
+  }
+
+  void _toggleSort() {
+    final profile = ref.read(accountProvider);
+    setState(() {
+      _sortAscending = !_sortAscending;
+      _sortBars(
+        _bars,
+        profile.userLocation.latitude,
+        profile.userLocation.longitude,
+      );
+    });
   }
 
   // ──────────────────── BUILD ────────────────────
@@ -173,9 +194,34 @@ class _BarListState extends ConsumerState<BarList> {
       );
     }
 
-    return ListView.builder(
-      itemCount: _bars.length,
-      itemBuilder: (_, index) => BarCard(bar: _bars[index]),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: _toggleSort,
+                icon: Icon(
+                  _sortAscending ? Icons.arrow_downward : Icons.arrow_upward,
+                  color: textGold,
+                ),
+                label: Text(
+                  _sortAscending ? "Plus proche d'abord" : "Plus loin d'abord",
+                  style: const TextStyle(color: textGold),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: _bars.length,
+            itemBuilder: (_, index) => BarCard(bar: _bars[index]),
+          ),
+        ),
+      ],
     );
   }
 }
