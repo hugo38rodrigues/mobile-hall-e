@@ -36,7 +36,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   Widget selectedComponent(int choice) {
-    print('newToken: $newToken');
     switch (choice) {
       case 1:
         return SendCode(getState: getState, userId: userId, token: newToken);
