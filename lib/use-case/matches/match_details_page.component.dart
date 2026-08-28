@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hall_e_mobile/use-case/map/map_wrapper.dart';
-import 'package:hall_e_mobile/use-case/my_app_bar.component.dart';
 import 'package:hall_e_mobile/models/bar-minimal-informations.model.dart';
 import 'package:hall_e_mobile/models/game.model.dart';
 import 'package:hall_e_mobile/models/league.model.dart';
@@ -11,6 +9,8 @@ import 'package:hall_e_mobile/models/team.model.dart';
 import 'package:hall_e_mobile/models/user.model.dart';
 import 'package:hall_e_mobile/providers/account.providers.dart';
 import 'package:hall_e_mobile/styles/font_colors.dart';
+import 'package:hall_e_mobile/use-case/map/map_wrapper.dart';
+import 'package:hall_e_mobile/use-case/my_app_bar.component.dart';
 import 'package:hall_e_mobile/utils/handle-error.utils.dart';
 import 'package:intl/intl.dart';
 
@@ -99,7 +99,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
                 child: Text(
                   widget.game.name,
                   style: const TextStyle(
-                    color: textGold,
+                    color: textWhite,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -124,8 +124,8 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
             child: Text(
               _days,
               textAlign: TextAlign.right,
-              style:
-                  const TextStyle(color: textGold, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: textWhite, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 12),
@@ -180,7 +180,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
           child: Text(
             value,
             style:
-                const TextStyle(color: textGold, fontWeight: FontWeight.bold),
+                const TextStyle(color: textWhite, fontWeight: FontWeight.bold),
             softWrap: true,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
@@ -266,7 +266,7 @@ class _MatchDetailsPageState extends ConsumerState<MatchDetailsPage> {
         acronym,
         textAlign: TextAlign.center,
         style: const TextStyle(
-            color: textGold, fontSize: 14, fontWeight: FontWeight.bold),
+            color: textWhite, fontSize: 14, fontWeight: FontWeight.bold),
         softWrap: true,
         maxLines: 2,
         overflow: TextOverflow.visible,

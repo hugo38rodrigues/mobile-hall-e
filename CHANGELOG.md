@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- [HE-51](https://xwdrblue.atlassian.net/browse/HE-) — *CSS standardization*
 - [HE-36](https://xwdrblue.atlassian.net/browse/HE-36) — *Rewrite the opening sentence*
 - [HE-19](https://xwdrblue.atlassian.net/browse/HE-19) — *Calculating GPS Distances Between Users and the Bar*
 - [HE-29](https://xwdrblue.atlassian.net/browse/HE-29) — *Forgotten password—typos corrected*
