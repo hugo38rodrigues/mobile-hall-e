@@ -22,9 +22,6 @@ class _LandingPageState extends ConsumerState<LandingPage>
   late final Animation<double> _logoOpacity;
   late final Animation<double> _logoScale;
 
-  // Message : fondu d'apparition
-  late final Animation<double> _messageOpacity;
-
   @override
   void initState() {
     super.initState();
@@ -32,7 +29,7 @@ class _LandingPageState extends ConsumerState<LandingPage>
     // Contrôleur de l'entrée en cascade
     _entryController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 1000),
     );
 
     // Logo : de 0 à 0.4 du timeline
@@ -40,6 +37,7 @@ class _LandingPageState extends ConsumerState<LandingPage>
       parent: _entryController,
       curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
     );
+
     _logoScale = Tween<double>(begin: 0.7, end: 1.0).animate(
       CurvedAnimation(
         parent: _entryController,
@@ -47,18 +45,11 @@ class _LandingPageState extends ConsumerState<LandingPage>
       ),
     );
 
-    // Titre : de 0.4 à 0.7
-
-    // Message : de 0.7 à 1.0
-    _messageOpacity = CurvedAnimation(
-      parent: _entryController,
-      curve: const Interval(0.7, 1.0, curve: Curves.easeIn),
-    );
-
     // Contrôleur du clignotement (boucle)
     _blinkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
+      value: 1.0,
     );
 
     // Lance l'entrée, puis démarre le clignotement à la fin
@@ -98,8 +89,8 @@ class _LandingPageState extends ConsumerState<LandingPage>
         child: Center(
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: isTablet ? screenSize.width * 0.2 : 16.0,
-              vertical: isTablet ? screenSize.height * 0.1 : 16.0,
+              horizontal: isTablet ? screenSize.width * 0.2 : 20.0,
+              vertical: isTablet ? screenSize.height * 0.1 : 20.0,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -108,30 +99,28 @@ class _LandingPageState extends ConsumerState<LandingPage>
                 FadeTransition(
                   opacity: _logoOpacity,
                   child: ScaleTransition(
-                    scale: _logoScale,
-                    child: Image.asset(
-                      'assets/logo_hall_e.png',
-                      width: isTablet ? 320 : 220,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                SizedBox(height: isTablet ? 40 : 28),
-
-                // 3. Message clignotant
-                FadeTransition(
-                  opacity: _messageOpacity,
-                  child: FadeTransition(
-                    opacity: _blinkController,
-                    child: Text(
-                      "Toucher pour voir vos matches",
-                      style: TextStyle(
-                        color: textWhite,
-                        fontSize: isTablet ? 32 : 20,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                      scale: _logoScale,
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            'assets/logo_hall_e.png',
+                            width: 320,
+                            fit: BoxFit.contain,
+                          ),
+                          SizedBox(height: isTablet ? 40 : 28),
+                          FadeTransition(
+                            opacity: _blinkController,
+                            child: Text(
+                              "Appuyer pour voir les matchs",
+                              style: TextStyle(
+                                color: textWhite,
+                                fontSize: isTablet ? 32 : 23,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      )),
                 ),
               ],
             ),
