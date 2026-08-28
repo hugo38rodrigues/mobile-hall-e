@@ -12,6 +12,7 @@ import 'package:hall_e_mobile/styles/font_colors.dart';
 import 'package:hall_e_mobile/use-case/matches/match_details_page.component.dart';
 import 'package:hall_e_mobile/utils/format-stream-url.utils.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MatchCard extends ConsumerStatefulWidget {
   const MatchCard({
@@ -80,6 +81,19 @@ class _MatchCardState extends ConsumerState<MatchCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _lunchStreamUrl(String url) async {
+    Uri parseUrl = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(parseUrl)) {
+        await launchUrl(parseUrl, mode: LaunchMode.externalApplication);
+      } else {
+        debugPrint("Impossible d'ouvrir : $url");
+      }
+    } catch (e) {
+      debugPrint("Erreur lors de l'ouverture du stream : $e");
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -254,13 +268,17 @@ class _MatchCardState extends ConsumerState<MatchCard> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (hasStream)
-            ...widget.streamPlatform.map(
-              (url) => Padding(
-                padding: const EdgeInsetsDirectional.only(start: 10),
-                child: Text(getStreamName(url),
-                    style: const TextStyle(color: textGrey)),
-              ),
-            )
+            ...widget.streamPlatform.map((String url) => Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10),
+                  child: InkWell(
+                    onTap: () => _lunchStreamUrl(url),
+                    child: Text(getStreamName(url),
+                        style: const TextStyle(
+                            color: textGrey,
+                            decoration: TextDecoration.underline,
+                            decorationColor: textGrey)),
+                  ),
+                ))
           else
             const Padding(
               padding: EdgeInsetsDirectional.only(start: 10),

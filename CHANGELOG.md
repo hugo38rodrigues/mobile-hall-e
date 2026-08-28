@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [HE-17](https://xwdrblue.atlassian.net/browse/HE-17) — *Fix for bar account creation*
 
 ### Added
+- [HE-54](https://xwdrblue.atlassian.net/browse/HE-54) — *Make stream URLs clickable*
 - [HE-38](https://xwdrblue.atlassian.net/browse/HE-38) — *Display a budget based on the number of filters enabled*
 ## [1.0.0] -- 2025-02-21
 
