@@ -85,7 +85,10 @@ class BarCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(informations),
-            _buildMatchList(matches),
+            _MatchList(
+              matches: _sortedMatches(matches),
+              buildRow: _buildMatchRow,
+            ),
             const SizedBox(height: 2),
             _buildLocationButton(informations, profile),
           ],
@@ -107,7 +110,7 @@ class BarCard extends ConsumerWidget {
                 informations.name!,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: textGold,
+                  color: textWhite,
                   fontFamily: 'Lexend',
                   fontWeight: FontWeight.bold,
                 ),
@@ -121,17 +124,6 @@ class BarCard extends ConsumerWidget {
             height: 1,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMatchList(List<ProgrammationMatch> matches) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: _sortedMatches(matches)
-            .map((prog) => _buildMatchRow(prog))
-            .toList(),
       ),
     );
   }
@@ -150,7 +142,7 @@ class BarCard extends ConsumerWidget {
               maxLines: 1,
               style: const TextStyle(
                 fontSize: 16,
-                color: textGold,
+                color: textWhite,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -180,7 +172,7 @@ class BarCard extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: textGold,
+                      color: textWhite,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -201,7 +193,7 @@ class BarCard extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: textGold,
+                      color: textWhite,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -220,7 +212,7 @@ class BarCard extends ConsumerWidget {
               maxLines: 1,
               style: const TextStyle(
                 fontSize: 16,
-                color: textGold,
+                color: textWhite,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -249,16 +241,13 @@ class BarCard extends ConsumerWidget {
             backgroundColor: bgCard,
             side: BorderSide(color: textGrey),
             elevation: 4,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8), // ← resserre un peu
+            padding: const EdgeInsets.symmetric(horizontal: 8),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize:
-                MainAxisSize.min, // ← ne prend que la place nécessaire
+            mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                // ← le texte cède l'espace au lieu de forcer sa taille
                 child: Text(
                   isActivated ? "Trouver le bar" : "Activer la localisation",
                   maxLines: 1,
@@ -281,6 +270,90 @@ class BarCard extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ──────────────────── LISTE DE MATCHS (repliable) ────────────────────
+
+class _MatchList extends StatefulWidget {
+  final List<ProgrammationMatch> matches;
+  final Widget Function(ProgrammationMatch) buildRow;
+
+  // Nombre de matchs affichés quand la liste est repliée
+  static const _collapsedCount = 3;
+
+  const _MatchList({
+    required this.matches,
+    required this.buildRow,
+  });
+
+  @override
+  State<_MatchList> createState() => _MatchListState();
+}
+
+class _MatchListState extends State<_MatchList> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final matches = widget.matches;
+    final total = matches.length;
+    final needsToggle = total > _MatchList._collapsedCount;
+
+    final visible = (_expanded || !needsToggle)
+        ? matches
+        : matches.sublist(0, _MatchList._collapsedCount);
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          // Animation douce à l'ouverture/fermeture
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: Column(
+              children: visible.map(widget.buildRow).toList(),
+            ),
+          ),
+
+          if (needsToggle) ...[
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () => setState(() => _expanded = !_expanded),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _expanded
+                          ? 'Voir moins'
+                          : 'Voir les ${total - _MatchList._collapsedCount} autres matchs',
+                      style: const TextStyle(
+                        color: textGold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: textGold,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
